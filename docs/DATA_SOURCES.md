@@ -1,9 +1,10 @@
 # AMWS Data Sources
 
-Research conducted: November 14, 2026  
-Search strategy: Timeboxed web search focusing on NASA public domain sources, NTRS, NASA-STD-3001, published mission data.
+**Research conducted**: November 14, 2026  
+**Date accessed for all sources**: November 14, 2026  
+**Search strategy**: Timeboxed web search focusing on NASA public domain sources, NTRS, NASA-STD-3001, published mission data.
 
-Format: **Topic** → Value → Source → Confidence (HIGH/MEDIUM/ASSUMPTION)
+**Format**: Topic → Value → Exact Source (URL + quoted value where applicable) → Confidence
 
 ---
 
