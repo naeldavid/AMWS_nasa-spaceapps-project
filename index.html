@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AMWS — Astronaut Mission Wrist System · Concept Prototype</title>
+<meta name="description" content="Concept prototype of an astronaut wrist-mounted mission computer. All data simulated.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='4' width='20' height='24' rx='4' fill='%230b1118' stroke='%237fe3c4' stroke-width='2'/%3E%3Cpath d='M10 17h3l2-5 3 9 2-4h2' stroke='%237fe3c4' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/watch.css">
+</head>
+<body data-view="desktop">
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" class="brand-mark" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="M10 17h3l2-5 3 9 2-4h2"/></svg>
+    <div><b>AMWS</b><span>ASTRONAUT MISSION WRIST SYSTEM</span></div>
+  </div>
+  <div class="tb-meta">
+    <div><span class="lbl">CREW</span><b>ASTRONAUT-01</b></div>
+    <div><span class="lbl">LOCATION</span><b data-t="location"></b></div>
+    <div><span class="lbl">MET</span><b class="mono" data-t="met"></b></div>
+    <div><span class="lbl">UTC</span><b class="mono" data-t="utc"></b></div>
+    <div><span class="lbl">RISK</span><span data-chip="risk"></span></div>
+  </div>
+  <div class="tb-actions">
+    <span class="sim-badge" title="All readings in this prototype are generated locally by a simulation.">◉ SIMULATED DATA</span>
+    <div class="seg view-toggle" role="group" aria-label="View mode">
+      <button data-view-btn="desktop">DESKTOP</button><button data-view-btn="wrist">WRIST</button>
+    </div>
+    <button class="btn primary" data-drawer="toggle">SIM CONTROLS</button>
+  </div>
+</header>
+<nav class="secnav" aria-label="Sections">
+  <a href="#unit"><em>01</em> WRIST COMPUTER</a>
+  <a href="#status"><em>02</em> LIVE ASTRONAUT STATUS</a>
+  <a href="#system"><em>03</em> THE SYSTEM</a>
+  <a href="#deepspace"><em>04</em> DEEP-SPACE BENEFITS</a>
+  <a href="#" data-drawer="open"><em>05</em> SIMULATION CONTROLS</a>
+</nav>
+
+<main>
+<!-- ===================== 01 · HERO + WRIST SIMULATOR ===================== -->
+<section id="unit" class="hero">
+  <div class="hero-copy">
+    <p class="kicker">CONCEPT PROTOTYPE · PERSONAL MISSION COMPUTER</p>
+    <h1>An astronaut's mission computer,<br>on the wrist.</h1>
+    <p class="lede">AMWS consolidates crew health, spacesuit life support, communications and mission state into one glove-operable display — built for the moments when Earth is minutes away and decisions can't wait.</p>
+
+    <div class="hero-status">
+      <div class="hs" data-sev="readiness"><span class="lbl">MISSION READINESS</span><b><span data-t="readiness"></span><u>%</u></b><span data-chip="readiness"></span></div>
+      <div class="hs" data-sev="risk"><span class="lbl">MISSION RISK</span><b class="md" data-t="risk"></b><small data-t="riskDetail"></small></div>
+      <div class="hs" data-sev="link"><span class="lbl">EARTH ONE-WAY DELAY</span><b class="md" data-t="delay"></b><small data-t="relay"></small></div>
+    </div>
+
+    <div class="demo-panel">
+      <div class="demo-head"><span class="lbl">DEMONSTRATION SCENARIO</span><span class="demo-step"></span></div>
+      <p class="demo-text"></p>
+      <div class="demo-bar"><i class="demo-prog"></i></div>
+      <div class="demo-btns">
+        <button class="btn primary" data-demo="start">▶ START DEMO</button>
+        <button class="btn" data-demo="pause">❚❚ PAUSE</button>
+        <button class="btn" data-demo="reset">↺ RESET</button>
+        <button class="btn danger" data-action="trigger-emergency">TRIGGER EMERGENCY</button>
+      </div>
+    </div>
+
+    <ul class="hw-guide">
+      <li><kbd>HOME</kbd><kbd>BACK</kbd> Physical bezel keys — always work, even with a fogged visor or a wet glove.</li>
+      <li><kbd>ACK</kbd> Acknowledge &amp; silence alarms. The alert stays listed until the condition clears.</li>
+      <li><kbd class="red">EMER</kbd> Guarded key: <b>hold 1.5 s</b> to declare an emergency. Dangerous on-screen actions also require a hold.</li>
+    </ul>
+  </div>
+
+  <!-- The physical wrist unit -->
+  <div class="watch-stage">
+    <div class="watch" aria-label="Simulated wrist computer">
+      <div class="strap s-top"></div><div class="strap s-bot"></div>
+      <div class="case">
+        <div class="hw hw-l">
+          <button class="hw-key" data-hw="home" aria-label="Home">HOME</button>
+          <button class="hw-key" data-hw="back" aria-label="Back">BACK</button>
+        </div>
+        <div class="bezel">
+          <div class="bezel-top"><span>AMWS-1</span><span class="led" data-sev="risk" title="Master caution light"></span><span>S/N 0001</span></div>
+          <div class="glass">
+            <div class="w-status">
+              <b data-t="utc"></b>
+              <span class="w-st-met"><span data-t="metDay"></span></span>
+              <span class="bars sm" data-bars=""><i></i><i></i><i></i><i></i></span>
+              <span class="w-batt" data-sev="watchBatt"><i><em data-w="watchBatt"></em></i><span data-t="watchBatt"></span>%</span>
+            </div>
+            <div class="w-screen" data-screen="home"></div>
+          </div>
+          <div class="bezel-bot">SIMULATED · CONCEPT UNIT · NOT FLIGHT CERTIFIED</div>
+        </div>
+        <div class="hw hw-r">
+          <button class="hw-key" data-hw="ack" aria-label="Acknowledge alarms">ACK</button>
+          <button class="hw-key hw-em" data-hold="hwEmergency" data-ms="1500" aria-label="Emergency — hold 1.5 seconds">
+            <span class="fill"></span><span class="t">EMER</span><small>HOLD</small>
+          </button>
+        </div>
+      </div>
+    </div>
+    <button class="btn exit-wrist" data-view-btn="desktop">◧ DESKTOP VIEW</button>
+    <p class="stage-cap">Interactive · tap tiles and buttons on the screen. Touch targets ≥ 56 px for gloved use.</p>
+  </div>
+</section>
+
+<!-- ===================== 02 · LIVE ASTRONAUT STATUS ===================== -->
+<section id="status" class="section">
+  <div class="sec-head">
+    <p class="kicker"><em>02</em> LIVE ASTRONAUT STATUS</p>
+    <h2>Mission-control view of ASTRONAUT-01</h2>
+    <p>The same simulated data stream the wrist unit shows, expanded for a ground or habitat console. Every status uses colour <b>and</b> icon <b>and</b> text.</p>
+  </div>
+
+  <div class="grid">
+    <!-- Readiness -->
+    <article class="card c4" data-sev="readiness">
+      <header><h3>MISSION READINESS</h3><span data-chip="readiness"></span></header>
+      <div class="ready-wrap">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg"/></svg>
+        <div class="ring-v"><b data-t="readiness"></b><u>%</u><span data-t="readinessLabel"></span></div>
+        <ul id="factors" class="factors"></ul>
+      </div>
+      <p class="fine">Overall readiness based on simulated physiological and mission-state parameters. Any critical vital caps the score at 40.</p>
+      <canvas class="spark" data-spark="readiness" data-min="0" data-max="100"></canvas>
+    </article>
+
+    <!-- Risk & alerts -->
+    <article class="card c5 risk-card" data-sev="risk">
+      <header><h3>EMERGENCY RISK ENGINE</h3><span class="fine" data-t="riskDetail"></span></header>
+      <div class="risk-scale" aria-hidden="true"><i>LOW</i><i>MODERATE</i><i>HIGH</i><i>CRITICAL</i></div>
+      <div class="risk-level"><span class="lbl">MISSION RISK</span><b data-t="risk"></b></div>
+      <div id="activeAlerts" class="alerts"></div>
+    </article>
+
+    <!-- Time -->
+    <article class="card c3">
+      <header><h3>MISSION TIME</h3><span class="fine" data-t="marsSol"></span></header>
+      <span class="lbl">MISSION ELAPSED</span><b class="big mono" data-t="met"></b>
+      <div class="next"><span class="lbl">TIME TO NEXT EVENT</span><b class="xl mono" data-t="nextEvent"></b><small data-t="nextEventName"></small></div>
+      <div class="kv"><span>UTC</span><b class="mono" data-t="utc"></b></div>
+      <div class="kv"><span>PHASE</span><b data-t="phase"></b></div>
+    </article>
+
+    <!-- Heart -->
+    <article class="card c6 hr-card" data-sev="hr">
+      <header><h3><span class="heart">♥</span> HEART RATE</h3><span data-chip="hr"></span></header>
+      <div class="hr-body">
+        <div class="hr-num"><b data-t="hr"></b><u>BPM</u><div class="kv"><span>NORMAL</span><b data-t="hrRange"></b></div><div class="kv"><span>TREND</span><b data-t="hrTrend"></b></div></div>
+        <canvas id="ecgMain" class="ecg-main"></canvas>
+      </div>
+      <canvas class="spark" data-spark="hr" data-band="50,100"></canvas>
+      <p class="fine">Synthetic ECG-shaped waveform driven by the simulated rate. Illustrative only — not diagnostic.</p>
+    </article>
+
+    <article class="card c2 vital" data-sev="spo2">
+      <header><h3>SpO₂</h3></header>
+      <b class="big"><span data-t="spo2"></span><u>%</u></b><span data-chip="spo2"></span>
+      <div class="kv"><span>WARN</span><b>&lt; 94 %</b></div><div class="kv"><span>TREND</span><b data-t="spo2Trend"></b></div>
+      <canvas class="spark" data-spark="spo2" data-min="80" data-max="100" data-band="95,100"></canvas>
+    </article>
+    <article class="card c2 vital" data-sev="temp">
+      <header><h3>BODY TEMP</h3></header>
+      <b class="big"><span data-t="temp"></span><u>°C</u></b><span data-chip="temp"></span>
+      <div class="kv"><span>NORMAL</span><b>36.1–37.5</b></div><div class="kv"><span>TREND</span><b data-t="tempTrend"></b></div>
+      <canvas class="spark" data-spark="temp" data-min="35" data-max="40" data-band="36.1,37.5"></canvas>
+    </article>
+    <article class="card c2 vital" data-sev="resp">
+      <header><h3>RESPIRATION</h3></header>
+      <b class="big"><span data-t="resp"></span><u>/min</u></b><span data-chip="resp"></span>
+      <div class="kv"><span>NORMAL</span><b>12–20</b></div><div class="kv"><span>TREND</span><b data-t="respTrend"></b></div>
+      <canvas class="spark" data-spark="resp" data-min="6" data-max="36" data-band="12,20"></canvas>
+    </article>
+
+    <!-- Derived load -->
+    <article class="card c3" data-sev="mental">
+      <header><h3>STRESS / FATIGUE</h3><span class="tag">DERIVED</span></header>
+      <div class="kv big-kv"><span>MENTAL LOAD · <b data-t="stress"></b>/100</span><span data-chip="mental"></span></div>
+      <div class="meter"><i data-w="stress"></i></div>
+      <div class="kv big-kv"><span>FATIGUE</span><b><span data-t="fatigue"></span>%</b></div>
+      <div class="meter"><i data-w="fatigue"></i></div>
+      <p class="fine">Simulated derived metric combining heart rate, CO₂, SpO₂, sleep and hydration. Not a medical diagnosis.</p>
+    </article>
+
+    <article class="card c3" data-sev="recovery">
+      <header><h3>SLEEP / CIRCADIAN</h3></header>
+      <div class="kv big-kv"><span>LAST SLEEP</span><b class="lg" data-t="sleep"></b></div>
+      <div class="kv big-kv"><span>RECOVERY</span><span data-chip="recovery"></span></div>
+      <div class="kv big-kv"><span>CIRCADIAN</span><span data-chip="circadian"></span></div>
+      <p class="fine" data-t="dayLen"></p>
+    </article>
+
+    <article class="card c3">
+      <header><h3>HYDRATION / LIFE SUPPORT</h3></header>
+      <div class="bar-row" data-sev="hydration"><span>HYDRATION</span><i><em data-w="hydration"></em></i><b><span data-t="hydration"></span>%</b></div>
+      <div class="bar-row" data-sev="lifeSupport"><span>LIFE SUPPORT</span><i><em data-w="lifeSupport"></em></i><b><span data-t="lifeSupport"></span>%</b></div>
+      <div class="bar-row" data-sev="food"><span>FOOD SUPPLY</span><i><em data-w="food"></em></i><b><span data-t="food"></span>%</b></div>
+      <div class="bar-row" data-sev="o2"><span>SUIT O₂</span><i><em data-w="o2"></em></i><b><span data-t="o2"></span>%</b></div>
+      <p class="fine">Habitat consumables (life support, food) shown as % of mission plan.</p>
+    </article>
+
+    <article class="card c3" data-sev="rad">
+      <header><h3>RADIATION EXPOSURE</h3><span data-chip="rad"></span></header>
+      <div class="kv big-kv"><span>DOSE RATE</span><b><span data-t="doseRate"></span> µSv/h</b></div>
+      <div class="kv big-kv"><span>TODAY</span><b><span data-t="doseToday"></span> mSv</b></div>
+      <div class="kv big-kv"><span>DAILY RATE</span><b><span data-t="doseDaily"></span> mSv/d</b></div>
+      <div class="kv big-kv"><span>MISSION TOTAL</span><b><span data-t="doseMission"></span> mSv</b></div>
+      <div class="rad-meter"><i class="rad-fill" data-w="career"></i><em id="careerMarker"></em><span class="t0">0</span><span class="t1">600 mSv career limit</span></div>
+      <p class="fine"><span data-t="careerPct"></span>% of 600 mSv career limit. Simulated values, magnitudes based on published mission measurements.</p>
+    </article>
+
+    <!-- Suit -->
+    <article class="card c5" data-sev="suit">
+      <header><h3>SUIT / ENVIRONMENT</h3><span data-chip="suit"></span></header>
+      <table class="tbl">
+        <tr data-sev="suitP"><td>SUIT PRESSURE</td><td><b data-t="suitP"></b> PSI</td><td><span data-chip="suitP"></span></td></tr>
+        <tr data-sev="o2"><td>O₂ SUPPLY</td><td><b data-t="o2"></b> % · <span data-t="o2Time"></span></td><td><span data-chip="o2"></span></td></tr>
+        <tr data-sev="co2"><td>CO₂ (ppCO₂)</td><td><b data-t="co2"></b> mmHg</td><td><span data-chip="co2"></span></td></tr>
+        <tr data-sev="suitT"><td>SUIT TEMP</td><td><b data-t="suitT"></b> °C</td><td><span data-chip="suitT"></span></td></tr>
+        <tr data-sev="suitBatt"><td>SUIT BATTERY</td><td><b data-t="suitBatt"></b> % · <span data-t="battTime"></span></td><td><span data-chip="suitBatt"></span></td></tr>
+        <tr data-sev="link"><td>COMMS SIGNAL</td><td><b data-t="signal"></b> %</td><td><span data-chip="link"></span></td></tr>
+        <tr data-sev="helmet"><td>HELMET</td><td><b data-t="suitMode"></b></td><td><span data-chip="helmet"></span></td></tr>
+        <tr data-sev="margin"><td>RETURN MARGIN</td><td><b data-t="margin"></b> beyond walk-back</td><td><span data-chip="margin"></span></td></tr>
+      </table>
+      <canvas class="spark" data-spark="co2" data-min="0" data-max="10" data-band="0,4"></canvas>
+    </article>
+
+    <article class="card c3">
+      <header><h3>GRAVITY / LOCATION</h3></header>
+      <div class="kv big-kv"><span>LOCATION</span><b data-t="location"></b></div>
+      <div class="kv big-kv"><span>GRAVITY</span><b class="lg" data-t="gravity"></b></div>
+      <div class="kv big-kv"><span>ALTITUDE</span><b data-t="altitude"></b></div>
+      <div class="kv big-kv"><span>SITE</span><b data-t="site"></b></div>
+      <div class="kv big-kv"><span>FROM EARTH</span><b data-t="distEarth"></b></div>
+      <p class="fine" data-t="env"></p>
+    </article>
+
+    <article class="card c4" data-sev="link">
+      <header><h3>COMMUNICATION DELAY</h3><span data-chip="link"></span></header>
+      <div class="comms-top">
+        <div><span class="lbl">ONE-WAY DELAY</span><b class="big mono" data-t="delay"></b></div>
+        <div class="bars lg" data-bars=""><i></i><i></i><i></i><i></i></div>
+      </div>
+      <canvas id="lightMain" class="light"></canvas>
+      <div class="delay-scale" style="height:40px">
+        <i style="left:12%">MOON 1.3 s</i><i style="left:71%">MARS MIN 3 m</i><i style="left:97%;top:20px">MARS MAX 22 m</i>
+        <em id="delayMarker" title="Current delay"></em>
+      </div>
+      <div class="kv"><span>ROUND TRIP</span><b class="mono" data-t="rtt"></b></div>
+      <div class="kv"><span>SIGNAL</span><b><span data-t="signal"></span>% · <span data-t="signalLabel"></span></b></div>
+      <div class="kv"><span>PATH</span><b data-t="relay"></b></div>
+      <p class="fine"> Delay grows with distance from Earth — at Mars, a question and its answer can be 6–44 minutes apart.</p>
+    </article>
+
+    <article class="card c12 log-card">
+      <header><h3>EVENT LOG</h3><span class="fine">MET timestamps · latest first</span></header>
+      <ul id="alertLog" class="log"></ul>
+    </article>
+  </div>
+</section>
+
+<!-- ===================== 03 · THE SYSTEM ===================== -->
+<section id="system" class="section">
+  <div class="sec-head">
+    <p class="kicker"><em>03</em> WHAT IS THIS DEVICE?</p>
+    <h2>The Astronaut Mission Wrist System</h2>
+    <p>AMWS is a <b>concept</b> for a ruggedised wrist-worn computer that would sit at the end of a sensor and data network — not a standalone gadget. It could read biosensors on the body, receive telemetry from the spacesuit's life-support system, and exchange data with the habitat, rover and spacecraft, presenting it all as one prioritised display.</p>
+  </div>
+
+  <div class="arch" aria-label="System architecture diagram">
+    <div class="arch-col">
+      <span class="lbl">INPUTS</span>
+      <div class="node">Biosensors<small>chest strap · ear/finger SpO₂ · skin temp · IMU</small></div>
+      <div class="node">Suit PLSS telemetry<small>pressure · O₂ · CO₂ · battery · thermal loop</small></div>
+      <div class="node">Environment<small>radiation dosimeter · ambient temp · humidity</small></div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-col core">
+      <span class="lbl">ON-WRIST MISSION COMPUTER</span>
+      <div class="node hl">Local rules engine<small>thresholds · trend detection · readiness · risk</small></div>
+      <div class="node hl">Decision support<small>procedures · return margin · consumables time</small></div>
+      <div class="node hl">Glove-operable display<small>C&amp;W hierarchy · hold-to-confirm</small></div>
+    </div>
+    <div class="arch-arrow">⇄</div>
+    <div class="arch-col">
+      <span class="lbl">LINKS (VIA SUIT RADIO)</span>
+      <div class="node">Suit &amp; crewmates<small>short-range, near-instant</small></div>
+      <div class="node">Habitat · Rover · Lander<small>local network relay</small></div>
+      <div class="node">Spacecraft / orbiter relay → Mission Control<small>high-gain antennas · DSN · minutes of delay</small></div>
+    </div>
+  </div>
+
+  <div class="cards4">
+    <article class="info"><span class="num">A</span><h3>Biosensors</h3>
+      <p>Could monitor heart rate, blood-oxygen saturation, skin/core temperature estimates, respiration rate, activity and posture, plus stress and fatigue indicators derived from those signals.</p></article>
+    <article class="info"><span class="num">B</span><h3>Environmental sensors</h3>
+      <p>Potentially reads radiation dose rate, suit pressure, oxygen supply, CO₂ partial pressure, temperature and humidity — mostly from the suit's own sensors rather than inside the watch.</p></article>
+    <article class="info"><span class="num">C</span><h3>Mission computer</h3>
+      <p>Fuses physiological, environmental and mission data. Instead of six separate readouts, the crew member sees one readiness score, one risk level and the single most important action.</p></article>
+    <article class="info"><span class="num">D</span><h3>Communication system</h3>
+      <p>The watch talks locally to the suit radio; the suit relays to the habitat, rover or lander, which in turn use spacecraft or orbiter relays and Earth's deep-space antennas. A wrist device cannot reach Earth on its own.</p></article>
+  </div>
+
+  <div class="two">
+    <div>
+      <h3 class="h3">Why on the wrist?</h3>
+      <ul class="ticks">
+        <li>Visible without turning the helmet — suit helmets restrict head movement and peripheral vision.</li>
+        <li>Spacesuits already carry wrist checklists and mirrors; a wrist display extends a proven location.</li>
+        <li>Always with the crew member: inside the habitat, in the rover and during EVA.</li>
+        <li>Works as a backup display if a helmet HUD or tablet fails.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="h3">Human-factors rules used in this prototype</h3>
+      <ul class="ticks">
+        <li><b>Glove targets:</b> on-screen controls ≥ 56 px, with spacing; physical keys for HOME/BACK/ACK.</li>
+        <li><b>Redundant coding:</b> every status = colour + icon (✓ ⚠ ✕) + word.</li>
+        <li><b>Hierarchy:</b> emergency → health → life support → comms → mission → secondary.</li>
+        <li><b>Error prevention:</b> dangerous actions require a sustained hold; release cancels.</li>
+        <li><b>Low cognitive load:</b> each alert carries one recommended local action.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 04 · DEEP SPACE ===================== -->
+<section id="deepspace" class="section">
+  <div class="sec-head">
+    <p class="kicker"><em>04</em> WHY IT MATTERS FOR MARS &amp; DEEP SPACE</p>
+    <h2>The farther from Earth, the more the crew must decide alone.</h2>
+  </div>
+  <div class="why">
+    <article><span class="num">01</span><h3>Communication delay</h3><p>Moon: ~1.3 s one way. Mars: roughly 3 to 22 minutes depending on planetary positions, plus periods with no link at all. Crews can't wait for Earth to answer — the device provides immediate local information and pre-defined emergency guidance.</p></article>
+    <article><span class="num">02</span><h3>Human health</h3><p>Long-duration flight brings fluid shifts, cardiovascular deconditioning, sleep disruption and radiation exposure. Continuous monitoring could help identify changes early, before they become operational problems.</p></article>
+    <article><span class="num">03</span><h3>Environmental dangers</h3><p>Radiation, reduced pressure, oxygen problems, CO₂ build-up and extreme temperatures can develop quietly. A fast-access status display shortens the time from onset to awareness.</p></article>
+    <article><span class="num">04</span><h3>Reduced cognitive load</h3><p>Rather than checking the suit, a tablet, the habitat and a dosimeter separately, the crew member sees one consolidated, prioritised view — with the next action already stated.</p></article>
+    <article><span class="num">05</span><h3>Autonomy</h3><p>Deep-space crews need local alerts, decision support, emergency procedures, mission information and health monitoring that work fully offline. Earth becomes an advisor, not a real-time controller.</p></article>
+  </div>
+  <table class="delay-tbl">
+    <thead><tr><th>Destination</th><th>One-way light time</th><th>Practical meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Low Earth orbit</td><td>&lt; 1 s (via relay)</td><td>Conversation with Mission Control in near real time.</td></tr>
+      <tr><td>Moon</td><td>≈ 1.3 s</td><td>Noticeable lag; real-time support still practical.</td></tr>
+      <tr><td>Mars (closest)</td><td>≈ 3 min</td><td>No real-time help; text-style exchanges.</td></tr>
+      <tr><td>Mars (farthest)</td><td>≈ 22 min</td><td>Up to ~44 min round trip; crews must act first and report after.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="foot">
+  <p><b>AMWS is a design concept / prototype.</b> It is not a certified medical device or flight system, is not approved by NASA, ESA or any space agency, and all readings are simulated locally in your browser. Thresholds and procedures shown are simplified illustrations.</p>
+  <p class="fine">Runs fully offline · no external APIs · HTML / CSS / JavaScript.</p>
+</footer>
+</main>
+
+<!-- ===================== 05 · SIMULATION CONTROLS (drawer) ===================== -->
+<aside id="simDrawer" class="drawer" aria-hidden="true" aria-label="Simulation controls">
+  <header class="drawer-head"><div><p class="kicker"><em>05</em> PRESENTER TOOL</p><h2>Simulation Controls</h2></div>
+    <button class="btn icon" data-drawer="close" aria-label="Close">✕</button></header>
+
+  <div class="drawer-body">
+    <div class="ctl-group demo-mini">
+      <div class="demo-head"><span class="lbl">DEMO</span><span class="demo-step"></span></div>
+      <p class="demo-text"></p><div class="demo-bar"><i class="demo-prog"></i></div>
+      <div class="demo-btns"><button class="btn primary" data-demo="start">▶ START</button><button class="btn" data-demo="pause">❚❚ PAUSE</button><button class="btn" data-demo="reset">↺ RESET</button></div>
+    </div>
+
+    <button class="btn danger wide" data-action="trigger-emergency">⚠ TRIGGER EMERGENCY</button>
+
+    <div class="ctl-group"><h4>Mission</h4>
+      <label>LOCATION</label><div class="seg" data-seg="location"><button data-v="EARTH">EARTH</button><button data-v="MOON">MOON</button><button data-v="MARS">MARS</button></div>
+      <label>PHASE</label><div class="seg" data-seg="phase"><button data-v="TRANSIT">TRANSIT</button><button data-v="LANDING">LANDING</button><button data-v="SURFACE">SURFACE</button></div>
+      <label>RADIATION</label><div class="seg" data-seg="rad"><button data-v="NORMAL">NORMAL</button><button data-v="ELEVATED">ELEVATED</button><button data-v="SPE">SPE</button></div>
+      <label>EARTH LINK</label><div class="seg" data-seg="comm"><button data-v="NOMINAL">NOMINAL</button><button data-v="DEGRADED">DEGRADED</button><button data-v="LOS">LOS</button></div>
+      <label>TIME ACCELERATION <small>(consumables, MET, comms)</small></label><div class="seg" data-seg="timeScale"><button data-v="1">1×</button><button data-v="10">10×</button><button data-v="60">60×</button></div>
+    </div>
+
+    <div class="ctl-group"><h4>Astronaut</h4>
+      <div class="rng"><label>HEART RATE</label><output></output><input type="range" data-ctl="hr" min="35" max="180" step="1"></div>
+      <div class="rng"><label>SpO₂</label><output></output><input type="range" data-ctl="spo2" min="80" max="100" step="1"></div>
+      <div class="rng"><label>BODY TEMP</label><output></output><input type="range" data-ctl="temp" min="34.5" max="40" step="0.1"></div>
+      <div class="rng"><label>RESPIRATION</label><output></output><input type="range" data-ctl="resp" min="6" max="36" step="1"></div>
+      <div class="rng"><label>FATIGUE BASE</label><output></output><input type="range" data-ctl="fatigue" min="0" max="100" step="1"></div>
+      <div class="rng"><label>HYDRATION</label><output></output><input type="range" data-ctl="hydration" min="30" max="100" step="1"></div>
+      <div class="rng"><label>LAST SLEEP</label><output></output><input type="range" data-ctl="sleep" min="3" max="9" step="0.1"></div>
+    </div>
+
+    <div class="ctl-group"><h4>Suit</h4>
+      <div class="rng"><label>SUIT PRESSURE</label><output></output><input type="range" data-ctl="suitP" min="3" max="5.2" step="0.05"></div>
+      <div class="rng"><label>CO₂</label><output></output><input type="range" data-ctl="co2" min="0" max="10" step="0.1"></div>
+      <div class="rng"><label>O₂ SUPPLY</label><output></output><input type="range" data-ctl="o2" min="0" max="100" step="1"></div>
+      <div class="rng"><label>SUIT BATTERY</label><output></output><input type="range" data-ctl="suitBatt" min="0" max="100" step="1"></div>
+      <div class="rng"><label>WRIST BATTERY</label><output></output><input type="range" data-ctl="watchBatt" min="0" max="100" step="1"></div>
+    </div>
+
+    <div class="ctl-group"><h4>System</h4>
+      <label class="tgl"><input type="checkbox" data-toggle="autoEmergency"> <span>Auto-emergency on CRITICAL risk</span></label>
+      <label class="tgl"><input type="checkbox" data-toggle="audio"> <span>Alarm tones</span></label>
+      <button class="btn wide" data-action="reset-all">↺ RESET ALL TO NOMINAL</button>
+      <p class="fine">Controls set the targets that simulated values drift toward — readings keep fluctuating naturally.</p>
+    </div>
+  </div>
+</aside>
+
+<!-- Load order: data → engine → assessment → UI → components → boot -->
+<script src="js/config.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/assess.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/watch.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
