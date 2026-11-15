@@ -217,6 +217,23 @@
       var speChip = document.getElementById('spe-chip');
       if (speChip) setChip(speChip, snap.radiation.speCls, snap.radiation.speLabel);
 
+      /* ---- Environment ---- */
+      var env = snap.environment || {};
+      function envText(id, val) { var el=document.getElementById(id); if(el) setText(el, val); }
+      function badgeText(id, show) { var el=document.getElementById(id); if(!el) return; el.textContent = show ? 'ASSUMED' : ''; el.className = show ? 'badge-assumed' : ''; }
+      var assumed = env.assumed || {};
+      envText('env-name', env.name || '—');
+      envText('env-gravity', (env.gravity!=null?Number(env.gravity).toFixed(2):'—') + ' m/s²' + (assumed.gravityMS2?' *':''));
+      envText('env-temp', (env.ambientTempC!=null?Number(env.ambientTempC).toFixed(1):'—') + ' °C' + (assumed.ambientTempC?' *':''));
+      envText('env-delay', (A.fmt && A.fmt.dur ? A.fmt.dur(env.oneWayDelayS||0) : (env.oneWayDelayS||0)+' s') + (assumed.distanceKm?' *':''));
+      envText('env-dose', (env.doseRate!=null?Number(env.doseRate).toFixed(2):'—') + ' mSv/day' + (assumed.doseRateMSvDay?' *':''));
+      envText('env-pace', (env.paceKmh!=null?Number(env.paceKmh).toFixed(1):'—') + ' km/h' + (assumed.paceKmh?' *':''));
+      envText('env-met', (env.walkMetabolic!=null?Math.round(env.walkMetabolic):'—') + ' BTU/hr' + (assumed.walkMetabolicBtuHr?' *':''));
+      badgeText('env-custom-badge', !!env.custom);
+      var th = env.thermal || {coupled:false,coolantFactor:1,batteryFactor:1};
+      var thText = th.coupled ? ('Thermal coupling (CUSTOM): coolant ×' + Number(th.coolantFactor).toFixed(2) + ', battery ×' + Number(th.batteryFactor).toFixed(2) + ' (ASSUMED)') : 'Thermal load: not modelled (preset)';
+      envText('env-thermal', thText);
+
       /* ---- Alerts ---- */
       var dashAlerts = document.getElementById('dash-alerts');
       if (dashAlerts) {

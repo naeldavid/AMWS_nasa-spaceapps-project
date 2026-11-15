@@ -262,6 +262,21 @@
         </div>
       </article>
 
+      <!-- Environment -->
+      <article class="tile c4" id="tile-environment">
+        <header><h3>Environment</h3><span id="env-custom-badge"></span></header>
+        <div class="tile-body" id="env-body">
+          <div class="kv"><span class="lbl">Profile</span><span class="v" id="env-name"></span></div>
+          <div class="kv"><span class="lbl">Gravity</span><span class="v" id="env-gravity"></span></div>
+          <div class="kv"><span class="lbl">Ambient temp</span><span class="v" id="env-temp"></span></div>
+          <div class="kv"><span class="lbl">One-way delay</span><span class="v" id="env-delay"></span></div>
+          <div class="kv"><span class="lbl">Dose rate</span><span class="v" id="env-dose"></span></div>
+          <div class="kv"><span class="lbl">Walkback pace</span><span class="v" id="env-pace"></span></div>
+          <div class="kv"><span class="lbl">Walk metabolic</span><span class="v" id="env-met"></span></div>
+          <p class="fine" id="env-thermal" style="margin-top:6px"></p>
+        </div>
+      </article>
+
       <!-- Alerts -->
       <article class="tile c4" id="tile-alerts" aria-live="assertive" aria-atomic="false" aria-relevant="additions removals">
         <header>
@@ -332,7 +347,24 @@
     <!-- Mission -->
     <div class="ctl-group">
       <h4>Mission</h4>
-      <label class="lbl" style="margin-bottom:4px">Location</label>
+      <label class="lbl" style="margin-bottom:4px">Environment</label>
+      <div class="seg" data-seg="environment">
+        <button data-v="EARTH_ORBIT">EARTH ORBIT</button>
+        <button data-v="MOON">MOON</button>
+        <button data-v="MARS">MARS</button>
+        <button data-v="CUSTOM">CUSTOM</button>
+      </div>
+      <div id="custom-env-panel" class="custom-env-panel" hidden>
+        <p class="fine" style="margin:6px 0;color:var(--white);font-weight:600;">CUSTOM PROFILE - user-supplied values, ALL ASSUMED</p>
+        <div class="rng"><label>GRAVITY (m/s²)<output data-env-out="gravityMS2"></output></label><input type="number" data-env="gravityMS2" step="0.01" min="0" max="30"></div>
+        <div class="rng"><label>DISTANCE FROM EARTH (km)<output data-env-out="distanceKm"></output></label><input type="number" data-env="distanceKm" step="1" min="0" max="6000000000"></div>
+        <div class="rng"><label>AMBIENT TEMP (°C)<output data-env-out="ambientTempC"></output></label><input type="number" data-env="ambientTempC" step="0.1" min="-270" max="500"></div>
+        <div class="rng"><label>GCR DOSE RATE (mSv/day)<output data-env-out="doseRateMSvDay"></output></label><input type="number" data-env="doseRateMSvDay" step="0.01" min="0" max="10"></div>
+        <div class="rng"><label>WALKBACK PACE (km/h)<output data-env-out="paceKmh"></output></label><input type="number" data-env="paceKmh" step="0.1" min="0.5" max="8"></div>
+        <div class="rng"><label>WALK METABOLIC (BTU/hr)<output data-env-out="walkMetabolicBtuHr"></output></label><input type="number" data-env="walkMetabolicBtuHr" step="10" min="500" max="3000"></div>
+        <p class="fine" data-env-error style="color:#ffb4b4;min-height:1.2em;"></p>
+      </div>
+      <label class="lbl" style="margin:var(--s3) 0 4px">Location</label>
       <div class="seg" data-seg="location">
         <button data-v="EARTH">EARTH</button>
         <button data-v="MOON">MOON</button>

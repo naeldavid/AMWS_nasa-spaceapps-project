@@ -37,7 +37,8 @@
 
   /* ---- Segmented controls: key → [getter, setter] ---- */
   var SEG = {
-    location:  [function () { return S.location; },  function (v) { A.sim.setLocation(v); A.watch.seedMessages(); A.watch.rerender(); }],
+    environment:[function () { return S.environment || (S.location==='EARTH'?'EARTH_ORBIT':S.location); }, function (v) { if (A.sim.setEnvironment) A.sim.setEnvironment(v); A.watch.seedMessages(); A.watch.rerender(); A.presenter.syncCustomEnv && A.presenter.syncCustomEnv(); }],
+    location:  [function () { return S.location; },  function (v) { A.sim.setLocation(v); if (S.environment!=='CUSTOM') S.environment = (v==='EARTH'?'EARTH_ORBIT':v); A.watch.seedMessages(); A.watch.rerender(); }],
     phase:     [function () { return S.phase; },     function (v) { A.sim.setPhase(v); A.watch.rerender(); }],
     spe:       [function () { return S.speStage || 'NORMAL'; }, function (v) { S.speStage = v; }],
     comm:      [function () { return S.commMode; },  function (v) { A.sim.setComm(v); }],
@@ -144,7 +145,32 @@
       document.querySelectorAll('[data-action="reset-all"]').forEach(function (b) {
         b.addEventListener('click', function () { demo.reset(); A.presenter.sync(); });
       });
-      _status(); this.sync();
+      document.querySelectorAll('input[data-env]').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+          var field = inp.dataset.env;
+          var ok = A.sim.setCustomEnvField ? A.sim.setCustomEnvField(field, inp.value) : false;
+          var err = document.querySelector('[data-env-error]');
+          if (!ok) {
+            if (err) err.textContent = 'Invalid value. Kept last valid value.';
+            A.presenter.syncCustomEnv();
+          } else {
+            if (err) err.textContent = '';
+            A.presenter.syncCustomEnv();
+          }
+        });
+      });
+      _status(); this.sync(); this.syncCustomEnv();
+    },
+    syncCustomEnv: function () {
+      var panel = document.getElementById('custom-env-panel');
+      if (panel) panel.hidden = !(S.environment === 'CUSTOM');
+      var ce = S.customEnv || (A.defaultCustomEnv ? A.defaultCustomEnv() : null);
+      if (!ce) return;
+      document.querySelectorAll('input[data-env]').forEach(function (inp) {
+        if (document.activeElement === inp) return;
+        var v = ce[inp.dataset.env];
+        if (v !== undefined && String(inp.value) !== String(v)) inp.value = v;
+      });
     },
     sync: function () {
       document.querySelectorAll('input[data-ctl]').forEach(function (inp) {
@@ -162,6 +188,7 @@
       document.querySelectorAll('input[data-toggle]').forEach(function (t) {
         t.checked = !!S[t.dataset.toggle];
       });
+      if (this.syncCustomEnv) this.syncCustomEnv();
     }
   };
 

@@ -81,7 +81,8 @@
     T.relay = S.location === 'EARTH' ? 'VIA RELAY SATELLITE' : S.location === 'MOON' ? 'VIA LANDER \u2192 LUNAR RELAY' : 'VIA HAB \u2192 MARS ORBITER RELAY';
 
     /* Mission / location */
-    T.location = loc.name + ' \u2014 ' + (S.phase === 'SURFACE' ? 'SURFACE' : S.phase === 'LANDING' ? 'DESCENT' : 'IN TRANSIT');
+    var envName = (S.environment === 'CUSTOM') ? 'CUSTOM' : loc.name;
+    T.location = envName + ' \u2014 ' + (S.phase === 'SURFACE' ? 'SURFACE' : S.phase === 'LANDING' ? 'DESCENT' : 'IN TRANSIT');
     T.phase = sc.label; T.destination = loc.destination; T.site = loc.site;
     T.gravity = sc.gravity.toFixed(sc.gravity < 1 ? 2 : 1) + ' G'; T.altitude = sc.altitude;
     T.distEarth = fmt.km(sc.dist); T.distDest = sc.toGo === null ? 'ARRIVED' : fmt.km(sc.toGo);

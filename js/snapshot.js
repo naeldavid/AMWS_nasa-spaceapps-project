@@ -75,9 +75,9 @@
 
     /* ---- location ---- */
     var location = {
-      name:      loc.name,
+      name:      (S.environment==='CUSTOM' ? 'CUSTOM' : loc.name),
       phase:     S.phase,
-      label:     sc.label,
+      label:     (S.environment==='CUSTOM' ? 'CUSTOM — SURFACE' : sc.label),
       gravity:   sc.gravity.toFixed(sc.gravity < 1 ? 2 : 1) + ' G',
       altitude:  sc.altitude,
       env:       sc.env,
@@ -231,10 +231,38 @@
       };
     });
 
+    /* ---- environment profile ---- */
+    var env = sim.environment ? sim.environment() : null;
+    if (!env) {
+      env = {
+        id: S.location, name: S.location, custom: false,
+        gravityMS2: sc.gravityMS2 || 0, distanceKm: sc.dist,
+        oneWayDelayS: sc.dist / C.C_KMS + sc.relay,
+        ambientTempC: sc.ambientTempC || 0, doseRateMSvDay: sc.dose,
+        paceKmh: sc.paceKmh || 0, walkMetabolicBtuHr: sc.walkMetabolicBtuHr || 0,
+        thermal: { coupled: false, coolantFactor: 1, batteryFactor: 1 },
+        assumed: { gravityMS2:true, distanceKm:false, ambientTempC:true, doseRateMSvDay:true, paceKmh:true, walkMetabolicBtuHr:true }
+      };
+    }
+    var environment = {
+      id: env.id,
+      name: env.name,
+      custom: !!env.custom,
+      gravity: env.gravityMS2,
+      distanceKm: env.distanceKm,
+      oneWayDelayS: env.oneWayDelayS,
+      ambientTempC: env.ambientTempC,
+      doseRate: env.doseRateMSvDay,
+      paceKmh: env.paceKmh,
+      walkMetabolic: env.walkMetabolicBtuHr,
+      thermal: env.thermal || { coupled:false, coolantFactor:1, batteryFactor:1 },
+      assumed: env.assumed || {}
+    };
+
     /* ---- overall ---- */
     var worstAlert = A.alerts.active().reduce(function (m, a) { return a.sev > m ? a.sev : m; }, 0);
 
-    return {
+    var snap = {
       met:         met,
       location:    location,
       vitals:      vitals,
@@ -245,6 +273,7 @@
       radiation:   radiation,
       evaElapsed:  evaElapsed,
       alerts:      alerts,
+      environment: environment,
       overallCls:  CLS_MAP[Math.min(3, worstAlert)],
       emergency: {
         active:  S.emergency.active,
@@ -253,6 +282,14 @@
         sinceFmt:S.emergency.active ? fmt.dur(Math.max(0, S.met - S.emergency.since)) : ''
       }
     };
+
+    // ensure no NaN/Infinity leak in numeric fields
+    function sanitize(x){
+      if (Array.isArray(x)) { x.forEach(sanitize); return; }
+      if (x && typeof x === 'object') { Object.keys(x).forEach(function(k){ var v=x[k]; if (typeof v==='number' && (!isFinite(v))) x[k]=0; else sanitize(v); }); }
+    }
+    sanitize(snap);
+    return snap;
   };
 
 })(window.AMWS);
