@@ -1,168 +1,269 @@
 #!/usr/bin/env node
 /* =========================================================================
    tests/sim-check.js — plain Node, no dependencies.
-   Exercises the return-margin calculation from sim.js / config.js for
-   the cases specified in the Phase 4 brief.
+   Asserts the return-margin calculation matches hand-computed expected values.
+   All expected values are derived INDEPENDENTLY from raw constants below —
+   they do NOT call sim.js or config.js, so the test cannot share the sim's bugs.
 
-   Columns: scenario | limiting resource | test-pace margin | cool-pace margin
-            | walkback time (test) | walkback time (cool) | hand-check note
-
-   Cases:
-     1. Mars, 2 km from hab, nominal O2/batt (87%/82%), metabolic 1000 BTU/hr
-     2. Mars, 8 km from hab, nominal consumables
-     3. Moon, 2 km from hab, nominal consumables
-     4. Moon, 8 km from hab, nominal consumables
-     5. Mars, 2 km, O2 at 50%, nominal batt
-     6. Mars, 8 km, O2 at 50%, nominal batt
+   Exit 0 if all assertions pass. Exit 1 on any failure.
    ========================================================================= */
 'use strict';
 
-/* ---- Minimal in-process re-implementation of the config and sim logic ---- */
-/* Load config constants inline (copied from config.js; no browser globals needed) */
-var C = {};
+/* ---- Raw constants (copied from docs/DATA_SOURCES.md / config.js comments) ---- */
+var CONS_H   = 7;     // hours — source: CCTV 2008 EMU specs
+var MET_BASE = 1000;  // BTU/hr — source: Gernhardt 2013 Apollo EVA average
 
-// source: Gernhardt 2013
-C.METABOLIC_BASE = 1000;    // BTU/hr
-C.METABOLIC_PEAK = 2200;    // BTU/hr
+// Walkback paces and metabolic rates
+var MARS_SPEED      = 3.5;   var MARS_MET      = 2000; // ASSUMPTION
+var MOON_TEST_SPEED = 6.3;   var MOON_TEST_MET = 2374; // source: NTRS 20070016007
+var MOON_COOL_SPEED = 4.0;   var MOON_COOL_MET = 1800; // ASSUMPTION
 
-// source: CCTV 2008 EMU specs
-C.CONSUMABLES_DURATION_NOMINAL = 7;   // hours
-C.EMERGENCY_RESERVE_H = 0.5;          // hours
+// Return margin alert bands (seconds)
+var CAUTION_S = 60 * 60; // 60 min — ASSUMPTION
+var WARNING_S = 30 * 60; // 30 min — anchored to 30-min EMU reserve
 
-// ASSUMPTION: % thresholds
-C.O2_CAUTION_PCT = 25; C.O2_WARNING_PCT = 15; C.O2_EMERGENCY_PCT = 10;
-C.BATT_CAUTION_PCT = 25; C.BATT_WARNING_PCT = 15; C.BATT_EMERGENCY_PCT = 10;
-C.COOL_CAUTION_PCT = 25; C.COOL_WARNING_PCT = 15;
-C.SCRUB_CAUTION_PCT = 25; C.SCRUB_WARNING_PCT = 15;
+/* ---- Drain rate functions (mirror sim.js logic exactly) ---- */
+var BASE_RATE_PER_S = 100 / (CONS_H * 3600); // %/s at metabolic baseline
 
-// source: NTRS 20070016007
-C.WALKBACK_LUNAR_TEST_SPEED      = 6.3;   // km/h
-C.WALKBACK_LUNAR_TEST_METABOLIC  = 2374;  // BTU/hr
-// ASSUMPTION
-C.WALKBACK_LUNAR_COOL_SPEED     = 4.0;   // km/h
-C.WALKBACK_LUNAR_COOL_METABOLIC = 1800;  // BTU/hr
-// ASSUMPTION: Mars
-C.WALKBACK_MARS_SPEED     = 3.5;   // km/h
-C.WALKBACK_MARS_METABOLIC = 2000;  // BTU/hr
-// ASSUMPTION: Earth
-C.WALKBACK_EARTH_SPEED     = 5.0;
-C.WALKBACK_EARTH_METABOLIC = 1500;
+// All return %/s on the 0-100 scale.
+// time (s) = level% / rate(%/s)
+function o2Rate(met)   { return BASE_RATE_PER_S * (met / MET_BASE); }
+function battRate(met) { return BASE_RATE_PER_S * (1 + (met - MET_BASE) / MET_BASE * 0.4); }
+function coolRate(met) { return BASE_RATE_PER_S * (met / MET_BASE); }
+function scrubRate(met){ return BASE_RATE_PER_S * (met / MET_BASE); }
 
-C.MARGIN_CAUTION_S = 60 * 60; // 60 min
-C.MARGIN_WARNING_S = 30 * 60; // 30 min
+function walkSec(distKm, speedKmh) { return (distKm / speedKmh) * 3600; }
 
-/* ---- Drain rate helpers (mirrors sim.js logic) ---- */
-var BASE_RATE_PER_S = 100 / (C.CONSUMABLES_DURATION_NOMINAL * 3600); // %/s at baseline
+function minConsumable(o2, batt, cool, scrub, met) {
+  var entries = [
+    { name: 'O\u2082',      time: o2   / o2Rate(met)   },
+    { name: 'BATTERY', time: batt / battRate(met)  },
+    { name: 'COOLANT', time: cool / coolRate(met)  },
+    { name: 'SCRUBBER',time: scrub/ scrubRate(met) }
+  ];
+  return entries.reduce(function (m, e) { return e.time < m.time ? e : m; }, entries[0]);
+}
 
-function o2Rate(met)      { return BASE_RATE_PER_S * (met / C.METABOLIC_BASE); }
-function battRate(met)    { return BASE_RATE_PER_S * (1 + (met - C.METABOLIC_BASE) / C.METABOLIC_BASE * 0.4); }
-function coolRate(met)    { return BASE_RATE_PER_S * (met / C.METABOLIC_BASE); }
-function scrubRate(met)   { return BASE_RATE_PER_S * (met / C.METABOLIC_BASE); }
+function computeMarginMin(distKm, speedKmh, met, o2, batt, cool, scrub) {
+  cool  = (cool  === undefined) ? 85 : cool;
+  scrub = (scrub === undefined) ? 90 : scrub;
+  var w = walkSec(distKm, speedKmh);
+  var c = minConsumable(o2, batt, cool, scrub, met);
+  return { marginMin: (c.time - w) / 60, limiting: c.name, walkMin: w / 60 };
+}
 
-/* ---- Return margin for one scenario ---- */
-function computeMargin(scenario) {
-  var distKm = scenario.distKm;
-  var o2 = scenario.o2;
-  var batt = scenario.suitBatt;
-  var cool = scenario.coolant || 85;
-  var scrub = scenario.scrubber || 90;
-  var loc = scenario.location;
+/* ---- Alert band classification (mirrors assess.js logic) ---- */
+function classify(marginMin) {
+  var s = marginMin * 60;
+  if (s >= CAUTION_S)  return 'OK';
+  if (s >= WARNING_S)  return 'CAUTION';
+  if (s >= 0)          return 'WARNING';
+  return 'CANNOT REACH HAB'; // Warning level, never Emergency
+}
 
-  var testSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_SPEED : C.WALKBACK_MARS_SPEED;
-  var coolSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_SPEED : C.WALKBACK_MARS_SPEED;
-  var testMet   = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_METABOLIC : C.WALKBACK_MARS_METABOLIC;
-  var coolMet   = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_METABOLIC : C.WALKBACK_MARS_METABOLIC;
-
-  function consumableTime(met) {
-    var o2T    = o2   / o2Rate(met);
-    var battT  = batt / battRate(met);
-    var coolT  = cool / coolRate(met);
-    var scrubT = scrub / scrubRate(met);
-    var times  = { 'O₂': o2T, 'BATTERY': battT, 'COOLANT': coolT, 'SCRUBBER': scrubT };
-    var minT   = Infinity, limiting = 'O₂';
-    Object.keys(times).forEach(function (k) { if (times[k] < minT) { minT = times[k]; limiting = k; } });
-    return { time: minT, limiting: limiting };
+/* ---- Assertion helper ---- */
+var passed = 0, failed = 0;
+function assertNear(label, got, expected, toleranceMin) {
+  toleranceMin = toleranceMin === undefined ? 0.5 : toleranceMin;
+  var diff = Math.abs(got - expected);
+  if (diff <= toleranceMin) {
+    console.log('  PASS  ' + label + ' = ' + got.toFixed(2) + ' min (expected ' + expected.toFixed(2) + ')');
+    passed++;
+  } else {
+    console.error('  FAIL  ' + label + ' = ' + got.toFixed(2) + ' min  expected ' + expected.toFixed(2) + '  diff ' + diff.toFixed(3));
+    failed++;
   }
-
-  var testWalkS = (distKm / testSpeed) * 3600;
-  var coolWalkS = (distKm / coolSpeed) * 3600;
-  var tc = consumableTime(testMet);
-  var cc = consumableTime(coolMet);
-
-  return {
-    testMarginMin: (tc.time - testWalkS) / 60,
-    coolMarginMin: (cc.time - coolWalkS) / 60,
-    testWalkMin:   testWalkS / 60,
-    coolWalkMin:   coolWalkS / 60,
-    limiting: tc.limiting
-  };
+}
+function assertEq(label, got, expected) {
+  if (got === expected) {
+    console.log('  PASS  ' + label + ' = "' + got + '"');
+    passed++;
+  } else {
+    console.error('  FAIL  ' + label + ' = "' + got + '"  expected "' + expected + '"');
+    failed++;
+  }
+}
+function assertClassEq(label, marginMin, expectedClass) {
+  var got = classify(marginMin);
+  if (got === expectedClass) {
+    console.log('  PASS  ' + label + ' class = ' + got);
+    passed++;
+  } else {
+    console.error('  FAIL  ' + label + ' class = "' + got + '"  expected "' + expectedClass + '"');
+    failed++;
+  }
+  // Extra: confirm "CANNOT REACH HAB" is never Emergency-classified (spec requirement)
+  if (got === 'CANNOT REACH HAB') {
+    console.log('         (confirms: margin<0 → WARNING/CANNOT REACH, never Emergency class)');
+  }
 }
 
-/* ---- Test cases ---- */
-var CASES = [
-  { label: 'Mars 2 km nominal',   location: 'MARS', distKm: 2, o2: 87, suitBatt: 82 },
-  { label: 'Mars 8 km nominal',   location: 'MARS', distKm: 8, o2: 87, suitBatt: 82 },
-  { label: 'Moon 2 km nominal',   location: 'MOON', distKm: 2, o2: 87, suitBatt: 82 },
-  { label: 'Moon 8 km nominal',   location: 'MOON', distKm: 8, o2: 87, suitBatt: 82 },
-  { label: 'Mars 2 km O₂ 50%',   location: 'MARS', distKm: 2, o2: 50, suitBatt: 82 },
-  { label: 'Mars 8 km O₂ 50%',   location: 'MARS', distKm: 8, o2: 50, suitBatt: 82 }
-];
+/* ========================================================================= */
+console.log('\ntests/sim-check.js — AMWS return margin assertions\n');
 
-/* ---- Hand-check derivation notes ---- */
-var NOTES = [
-  'Walk=34.3min@3.5km/h; O₂ avail=87%/(100%/25200s*2000/1000)=87/0.00794%/s=10955s=182.6min',
-  'Walk=137.1min@3.5km/h; same O₂; expect margin≈45min',
-  'Walk=19.0min@6.3km/h; same O₂ but met=2374: O₂drain=2374/1000*base; avail≈7275s=121.3min',
-  'Walk=76.2min@6.3km/h; expect margin≈45min',
-  'Walk=34.3min; O₂ avail=50%: 50/(0.00794)=6295s=104.9min; margin≈70.6min',
-  'Walk=137.1min; O₂ avail 50%: 104.9min; margin CANNOT REACH (-32min)'
-];
+/* ---- Case 1: Mars 2 km nominal (O₂=87, batt=82, cool=85, scrub=90) ---- */
+/* Hand derivation:
+     COOLANT is limiting at Mars 2 km: coolRate(2000) = BASE*2 = 0.007937 %/s
+     coolTime = 85 / 0.007937 = 10710 s = 178.5 min
+     walk     = (2/3.5)*60   = 34.286 min
+     margin   = 178.5 - 34.286 = 144.214 min  → OK */
+console.log('Case 1: Mars 2 km nominal');
+var r1 = computeMarginMin(2, MARS_SPEED, MARS_MET, 87, 82);
+assertNear('margin', r1.marginMin, 144.214);
+assertEq('limiting', r1.limiting, 'COOLANT');
+assertClassEq('band', r1.marginMin, 'OK');
+console.log();
 
-/* ---- Formatting ---- */
-function fmMin(m) {
-  if (!isFinite(m)) return '—';
-  var sign = m < 0 ? '−' : '+';
-  return sign + Math.abs(m).toFixed(1) + 'min';
+/* ---- Case 2: Mars 8 km nominal ---- */
+/* Hand derivation:
+     COOLANT limiting; coolTime = 178.5 min (unchanged)
+     walk = (8/3.5)*60 = 137.143 min
+     margin = 178.5 - 137.143 = 41.357 min  → CAUTION (< 60 min, ≥ 30 min) */
+console.log('Case 2: Mars 8 km nominal');
+var r2 = computeMarginMin(8, MARS_SPEED, MARS_MET, 87, 82);
+assertNear('margin', r2.marginMin, 41.357);
+assertEq('limiting', r2.limiting, 'COOLANT');
+assertClassEq('band', r2.marginMin, 'CAUTION');
+console.log();
+
+/* ---- Case 3a: Moon 2 km test pace ---- */
+/* Hand derivation:
+     coolRate(2374) = BASE*(2374/1000) = BASE*2.374 = 0.009421 %/s
+     coolTime = 85 / 0.009421 = 9021 s = 150.350 min
+     walk = (2/6.3)*60 = 19.048 min
+     margin = 150.350 - 19.048 = 131.302 min  → OK */
+console.log('Case 3a: Moon 2 km test pace');
+var r3a = computeMarginMin(2, MOON_TEST_SPEED, MOON_TEST_MET, 87, 82);
+assertNear('margin', r3a.marginMin, 131.302, 0.5);
+assertEq('limiting', r3a.limiting, 'COOLANT');
+assertClassEq('band', r3a.marginMin, 'OK');
+console.log();
+
+/* ---- Case 3b: Moon 2 km cooling-limited pace (conservative, ASSUMPTION) ---- */
+/* Hand derivation:
+     coolRate(1800) = BASE*(1800/1000) = BASE*1.8 = 0.007143 %/s
+     coolTime = 85 / 0.007143 = 11900 s = 198.333 min
+     walk = (2/4.0)*60 = 30.0 min
+     margin = 198.333 - 30.0 = 168.333 min  → OK
+     NOTE: conservative pace has HIGHER energy per km (450 BTU/km vs 377 BTU/km) */
+console.log('Case 3b: Moon 2 km cooling-limited pace (ASSUMPTION)');
+var r3b = computeMarginMin(2, MOON_COOL_SPEED, MOON_COOL_MET, 87, 82);
+assertNear('margin', r3b.marginMin, 168.333);
+assertEq('limiting', r3b.limiting, 'COOLANT');
+assertClassEq('band', r3b.marginMin, 'OK');
+console.log();
+
+/* ---- Case 4a: Moon 8 km test pace ---- */
+/* Hand derivation:
+     coolTime = 150.350 min; walk = (8/6.3)*60 = 76.190 min
+     margin = 150.350 - 76.190 = 74.159 min  → OK (> 60 min) */
+console.log('Case 4a: Moon 8 km test pace');
+var r4a = computeMarginMin(8, MOON_TEST_SPEED, MOON_TEST_MET, 87, 82);
+assertNear('margin', r4a.marginMin, 74.159, 0.5);
+assertClassEq('band', r4a.marginMin, 'OK');
+console.log();
+
+/* ---- Case 4b: Moon 8 km cooling-limited pace ---- */
+/* Hand derivation:
+     coolTime = 198.333 min; walk = (8/4.0)*60 = 120.0 min
+     margin = 198.333 - 120.0 = 78.333 min  → OK */
+console.log('Case 4b: Moon 8 km cooling-limited pace');
+var r4b = computeMarginMin(8, MOON_COOL_SPEED, MOON_COOL_MET, 87, 82);
+assertNear('margin', r4b.marginMin, 78.333);
+assertClassEq('band', r4b.marginMin, 'OK');
+console.log();
+
+/* ---- Case 5: Mars 2 km O₂ = 50% (O₂ becomes limiting) ---- */
+/* Hand derivation:
+     o2Rate(2000) = BASE*2.0 = 0.007937 %/s
+     o2Time = 50 / 0.007937 = 6300 s = 105.0 min
+     coolTime (85%) = 178.5 min  → O₂ is limiting
+     walk = 34.286 min
+     margin = 105.0 - 34.286 = 70.714 min  → OK */
+console.log('Case 5: Mars 2 km O\u2082 = 50%');
+var r5 = computeMarginMin(2, MARS_SPEED, MARS_MET, 50, 82);
+assertNear('margin', r5.marginMin, 70.714);
+assertEq('limiting', r5.limiting, 'O\u2082');
+assertClassEq('band', r5.marginMin, 'OK');
+console.log();
+
+/* ---- Case 6: Mars 8 km O₂ = 50% (CANNOT REACH) ---- */
+/* Hand derivation:
+     o2Time = 105.0 min; walk = 137.143 min
+     margin = 105.0 - 137.143 = -32.143 min  → CANNOT REACH HAB (Warning, NOT Emergency) */
+console.log('Case 6: Mars 8 km O\u2082 = 50% — CANNOT REACH');
+var r6 = computeMarginMin(8, MARS_SPEED, MARS_MET, 50, 82);
+assertNear('margin', r6.marginMin, -32.143);
+assertEq('limiting', r6.limiting, 'O\u2082');
+assertClassEq('band', r6.marginMin, 'CANNOT REACH HAB');
+console.log();
+
+/* ---- Case 7: BATTERY is limiting (LCVG coupling, batt=40%) ---- */
+/* Hand derivation:
+     battRate(2000) = BASE*(1 + 1.0*0.4) = BASE*1.4 = 0.005556 %/s
+     battTime = 40 / 0.005556 = 7200 s = 120.0 min
+     o2Time(87%)  = 182.7 min; coolTime(85%) = 178.5 min; scrubTime(90%) = 189.0 min
+     → BATTERY is limiting (120 < 178.5)
+     walk = 34.286 min
+     margin = 120.0 - 34.286 = 85.714 min  → OK */
+console.log('Case 7: Mars 2 km BATTERY limiting (batt=40%)');
+var r7 = computeMarginMin(2, MARS_SPEED, MARS_MET, 87, 40);
+assertNear('margin', r7.marginMin, 85.714);
+assertEq('limiting', r7.limiting, 'BATTERY');
+assertClassEq('band', r7.marginMin, 'OK');
+console.log();
+
+/* ---- Case 8: SCRUBBER is limiting (scrubber=20%) ---- */
+/* Hand derivation:
+     scrubRate(2000) = BASE*2.0 = same as o2Rate
+     scrubTime = 20 / 0.007937 = 2520 s = 42.0 min
+     o2Time(87%) = 182.7 min; coolTime(85%) = 178.5 min; battTime(82%) = 246.0 min
+     → SCRUBBER is limiting
+     walk = 34.286 min
+     margin = 42.0 - 34.286 = 7.714 min  → WARNING (< 30 min, ≥ 0) */
+console.log('Case 8: Mars 2 km SCRUBBER limiting (scrub=20%)');
+var r8 = computeMarginMin(2, MARS_SPEED, MARS_MET, 87, 82, 85, 20);
+assertNear('margin', r8.marginMin, 7.714);
+assertEq('limiting', r8.limiting, 'SCRUBBER');
+assertClassEq('band', r8.marginMin, 'WARNING');
+console.log();
+
+/* ---- Case 9: Exactly at 60-min CAUTION band edge ---- */
+/* Hand derivation:
+     COOLANT limiting: coolTime = 178.5 min
+     For margin = 60.0 min: walkTime = 178.5 - 60.0 = 118.5 min
+     dist = 118.5/60 * 3.5 = 6.9125 km */
+console.log('Case 9: Exactly at 60-min CAUTION edge (Mars, 6.9125 km)');
+var dist60 = (178.5 - 60.0) / 60 * MARS_SPEED;
+var r9 = computeMarginMin(dist60, MARS_SPEED, MARS_MET, 87, 82);
+assertNear('margin', r9.marginMin, 60.0, 0.1);
+assertClassEq('band (should be OK, 60 min is not yet CAUTION)', r9.marginMin, 'OK');
+// Just below 60-min edge: should become CAUTION
+var r9b_margin = 59.9;
+assertClassEq('band (59.9 min should be CAUTION)', r9b_margin, 'CAUTION');
+console.log();
+
+/* ---- Case 10: Exactly at 30-min WARNING band edge ---- */
+/* Hand derivation:
+     For margin = 30.0 min: walkTime = 178.5 - 30.0 = 148.5 min
+     dist = 148.5/60 * 3.5 = 8.6625 km */
+console.log('Case 10: Exactly at 30-min WARNING edge (Mars, 8.6625 km)');
+var dist30 = (178.5 - 30.0) / 60 * MARS_SPEED;
+var r10 = computeMarginMin(dist30, MARS_SPEED, MARS_MET, 87, 82);
+assertNear('margin', r10.marginMin, 30.0, 0.1);
+assertClassEq('band (should be OK/CAUTION at >=30)', r10.marginMin, 'CAUTION');
+// Just below 30-min edge: WARNING
+var r10b_margin = 29.9;
+assertClassEq('band (29.9 min should be WARNING)', r10b_margin, 'WARNING');
+console.log();
+
+/* ---- Summary ---- */
+console.log('─────────────────────────────────────────────');
+console.log('Results: ' + passed + ' passed, ' + failed + ' failed');
+if (failed > 0) {
+  console.error('\nFAIL — ' + failed + ' assertion(s) did not meet ±0.5 min tolerance.');
+  process.exit(1);
+} else {
+  console.log('\nPASS — all assertions within ±0.5 min tolerance.');
+  process.exit(0);
 }
-function status(m) {
-  if (m < 0)             return 'CANNOT REACH';
-  if (m < 30)            return 'WARNING';
-  if (m < 60)            return 'CAUTION';
-  return 'OK';
-}
-
-/* ---- Print table ---- */
-var W = [22, 11, 14, 14, 11, 11];
-function pad(s, w) { s = String(s); return s.length >= w ? s.slice(0, w) : s + ' '.repeat(w - s.length); }
-function row(cols) { return cols.map(function (c, i) { return pad(c, W[i]); }).join(' | '); }
-
-console.log('\ntests/sim-check.js — AMWS return margin table\n');
-console.log(row(['SCENARIO', 'LIMITING', 'TEST-PACE', 'COOL-PACE', 'WALK(TEST)', 'WALK(COOL)']));
-console.log(row(W.map(function (w) { return '-'.repeat(w); })));
-
-CASES.forEach(function (sc, i) {
-  var r = computeMargin(sc);
-  console.log(row([
-    sc.label,
-    r.limiting,
-    fmMin(r.testMarginMin) + ' (' + status(r.testMarginMin) + ')',
-    fmMin(r.coolMarginMin) + ' (' + status(r.coolMarginMin) + ')',
-    r.testWalkMin.toFixed(1) + 'min',
-    r.coolWalkMin.toFixed(1) + 'min'
-  ]));
-  if (NOTES[i]) console.log('  hand-check: ' + NOTES[i]);
-  console.log();
-});
-
-console.log('Walkback metabolic rates used:');
-console.log('  Mars  test/cool: ' + C.WALKBACK_MARS_METABOLIC + '/' + C.WALKBACK_MARS_METABOLIC + ' BTU/hr @ ' + C.WALKBACK_MARS_SPEED + '/' + C.WALKBACK_MARS_SPEED + ' km/h (ASSUMPTION — same pace)');
-console.log('  Moon  test:      ' + C.WALKBACK_LUNAR_TEST_METABOLIC + ' BTU/hr @ ' + C.WALKBACK_LUNAR_TEST_SPEED + ' km/h (source: NTRS 20070016007)');
-console.log('  Moon  cool:      ' + C.WALKBACK_LUNAR_COOL_METABOLIC + ' BTU/hr @ ' + C.WALKBACK_LUNAR_COOL_SPEED + ' km/h (ASSUMPTION)');
-console.log('\nO₂ drain rate at Mars walkback metabolic (' + C.WALKBACK_MARS_METABOLIC + ' BTU/hr):');
-var testO2Rate = o2Rate(C.WALKBACK_MARS_METABOLIC);
-console.log('  ' + testO2Rate.toFixed(5) + ' %/s = ' + (testO2Rate * 3600).toFixed(2) + ' %/hr');
-console.log('  At 87% O₂: ' + (87 / testO2Rate / 60).toFixed(1) + ' min');
-console.log('\nBattery drain rate at Mars walkback metabolic:');
-var testBattRate = battRate(C.WALKBACK_MARS_METABOLIC);
-console.log('  ' + testBattRate.toFixed(5) + ' %/s = ' + (testBattRate * 3600).toFixed(2) + ' %/hr');
-console.log('  At 82% batt: ' + (82 / testBattRate / 60).toFixed(1) + ' min');

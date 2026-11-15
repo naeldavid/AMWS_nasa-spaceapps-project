@@ -35,12 +35,14 @@ for (let i = 0; i < lines.length; i++) {
   if (/=\s*\{/.test(line) || /=\s*\[/.test(line)) continue;
 
   // Check the current line and the 5 lines above for a source or ASSUMPTION tag.
-  // Also accepts inline "— ASSUMPTION" or "— source:" on the constant's own line.
+  // Also accepts inline "— ASSUMPTION" or "— source:" or "(ASSUMPTION)" on the constant's own line.
   const lookback = lines.slice(Math.max(0, i - 5), i + 1).join('\n');
   const hasTag = /\/\/ source:/i.test(lookback)
               || /\/\/ ASSUMPTION:/i.test(lookback)
               || /—\s*ASSUMPTION/i.test(line)
-              || /—\s*source:/i.test(line);
+              || /—\s*source:/i.test(line)
+              || /\(ASSUMPTION\)/i.test(line)
+              || /\(ASSUMPTION —/i.test(line);
 
   if (!hasTag) {
     // Extract constant name for reporting

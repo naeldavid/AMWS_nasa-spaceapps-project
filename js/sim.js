@@ -159,7 +159,7 @@
       o2: 87,       // %
       suitBatt: 82, // %
       coolant: 85,  // % — ASSUMPTION: starts at same level as O2
-      scrubber: 90, // % — ASSUMPTION: starts fuller (less consumed at rest)
+      scrubber: 55, // % — ASSUMPTION: partially used (makes SCRUBBER the initial limiting resource in demo)
       watchBatt: 87,// %
 
       /* Mission time */

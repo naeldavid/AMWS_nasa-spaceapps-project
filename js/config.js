@@ -105,10 +105,18 @@ window.AMWS = window.AMWS || {};
   // source: NTRS 20070016007 (continued)
   A.WALKBACK_LUNAR_TEST_SPEED      = 6.3;  // km/h
   A.WALKBACK_LUNAR_TEST_METABOLIC  = 2374; // BTU/hr
+  // Energy cost (derived from above): 2374 / 6.3 = 376.8 BTU/km
+  A.WALKBACK_LUNAR_TEST_ENERGY_PER_KM = 376.8; // BTU/km — source: NTRS 20070016007
 
-  // ASSUMPTION: cooling-limited pace (test subjects were limited by cooling; slower pace may apply)
-  A.WALKBACK_LUNAR_COOL_SPEED     = 4.0;  // km/h (configurable)
-  A.WALKBACK_LUNAR_COOL_METABOLIC = 1800; // BTU/hr (configurable)
+  // ASSUMPTION: cooling-limited pace.
+  // The sourced test pace (6.3 km/h) exceeded Apollo/EMU cooling capability per NTRS 20070016007
+  // (subjects were cooling-limited; they wanted to go faster but couldn't).
+  // The conservative case uses a higher energy cost per km, NOT a sourced thermal limit.
+  // Conservative multiplier: 450/376.8 = 1.19x over the sourced test pace (ASSUMPTION).
+  A.WALKBACK_LUNAR_COOL_SPEED         = 4.0;   // km/h (ASSUMPTION — configurable)
+  A.WALKBACK_LUNAR_COOL_METABOLIC     = 1800;  // BTU/hr (ASSUMPTION — configurable)
+  A.WALKBACK_LUNAR_COOL_ENERGY_PER_KM = 450.0; // BTU/km (ASSUMPTION)
+  A.WALKBACK_LUNAR_COOL_MULTIPLIER    = 1.19;   // ASSUMPTION: conservative case multiplier
 
   // ASSUMPTION: Mars pace — no sourced Mars 10 km walkback test data
   A.WALKBACK_MARS_SPEED     = 3.5;  // km/h (configurable)
@@ -389,18 +397,20 @@ window.AMWS = window.AMWS || {};
   /* -----------------------------------------------------------------------
      DEMO SCENARIO — Mars surface EVA, suit fault develops → emergency ~60 s
      Uses metabolic rate as the driver; HR, SpO₂, CO₂ follow from it.
+     Initial scrubber=55% so SCRUBBER is the limiting resource at start.
+     At t≈32 s battery drops to 17% → BATTERY becomes the limiting resource.
      ASSUMPTION: scenario timing and ramp magnitudes (illustrative)
      ----------------------------------------------------------------------- */
   A.DEMO = [
-    { at: 0,  dur: 6,  text: 'Nominal Mars EVA. ASTRONAUT-01 at 1.4 km from habitat.',
+    { at: 0,  dur: 6,  text: 'Nominal Mars EVA. ASTRONAUT-01 at 1.4 km from habitat. SCRUBBER limiting.',
       set: { metabolic: 1000, spo2Base: 98, co2Base: 2.1, suitPBase: 4.3, suitBattDrain: 1 } },
     { at: 8,  dur: 14, text: 'Metabolic rate rising — high workload, possible thermal stress.',
       set: { metabolic: 1600, tempBase: 37.6 } },
     { at: 20, dur: 14, text: 'CO₂ scrubber degrading. SpO₂ beginning to fall.',
       set: { co2Base: 6.2, spo2Base: 92 } },
-    { at: 32, dur: 12, text: 'Suit battery draining faster than plan (heater + fan load).',
+    { at: 32, dur: 12, text: 'Battery draining fast (heater load). BATTERY now limiting resource.',
       set: { suitBattTarget: 17 } },
-    { at: 42, dur: 10, text: 'Slow suit pressure decay detected. Metabolic workload elevated.',
+    { at: 42, dur: 10, text: 'Slow suit pressure decay. Metabolic workload elevated.',
       set: { suitPBase: 3.8, spo2Base: 88, metabolic: 1900 } },
     { at: 54, dur: 6,  text: 'CO₂ critical + pressure approaching breach threshold → auto-EMERGENCY.',
       set: { co2Base: 8.0, spo2Base: 86, suitPBase: 3.4 } }
