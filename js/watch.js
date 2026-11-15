@@ -104,7 +104,7 @@
           '<div class="w-kv"><span>PHASE</span><b data-t="phase"></b></div><div class="w-kv"><span>ENVIRONMENT</span><b data-t="env"></b></div>' +
           '<p class="w-note">Trajectory data would come from the spacecraft guidance computer. Simulated.</p></div>';
       }
-      return head('NAV', 'RELATIVE · SIM') +
+      return head('NAV', 'RELATIVE · SIM') + '<div class="w-scroll">' +
         '<div class="w-radar"><svg viewBox="-100 -100 200 200" class="radar">' +
         '<circle r="92" class="rg"/><circle r="61" class="rg"/><circle r="30" class="rg"/>' +
         '<g class="rose"><text y="-80">N</text><text x="80" y="4">E</text><text y="88">S</text><text x="-80" y="4">W</text></g>' +
@@ -116,7 +116,7 @@
         '<div><span class="lbl">WALK BACK</span><b data-t="walkback"></b><small>@ 2.5 km/h</small></div>' +
         '<div data-sev="margin"><span class="lbl">RETURN MARGIN</span><b data-t="margin"></b><span data-chip="margin"></span></div>' +
         '<div><span class="lbl">HEADING</span><b data-t="heading"></b><small data-t="altitude"></small></div></div>' +
-        '<p class="w-note tight"><span data-t="terrain"></span> · Beacon-based relative navigation concept — not GPS.</p>';
+        '<p class="w-note tight"><span data-t="terrain"></span> · Beacon-based relative navigation concept — not GPS.</p></div>';
     },
 
     comms: function () {
@@ -143,6 +143,7 @@
 
     emergency: function () {
       return '<header class="w-em-head"><b>EMERGENCY</b><span><span data-t="emReason"></span> · T+<span data-t="emSince"></span></span></header>' +
+        '<div class="w-scroll">' +
         '<div class="w-em-tiles">' +
         '<div data-sev="hr"><span class="lbl">HR</span><b data-t="hr"></b></div>' +
         '<div data-sev="spo2"><span class="lbl">SpO₂ / O₂</span><b><span data-t="spo2"></span><em>/<span data-t="o2"></span></em></b></div>' +
@@ -152,7 +153,8 @@
         '<div data-sev="link"><span class="lbl">COMMS</span><b class="sm" data-t="link"></b></div></div>' +
         '<div class="w-em-btns"><button class="w-btn red" data-go="emContact">CONTACT EARTH</button><button class="w-btn red" data-go="emLife">LIFE SUPPORT</button>' +
         '<button class="w-btn red" data-go="emReturn">RETURN TO HAB</button><button class="w-btn red" data-go="emMedical">MEDICAL DATA</button></div>' +
-        hold('cancelEm', 'CANCEL EMERGENCY', 'ghost wide', 1600);
+        hold('cancelEm', 'CANCEL EMERGENCY', 'ghost wide', 1600) +
+        '</div>';
     },
 
     emContact: function () {
@@ -176,11 +178,12 @@
     },
 
     emReturn: function () {
-      return head('RETURN TO HAB', 'SIM NAV') +
+      return head('RETURN TO HAB', 'SIM NAV') + '<div class="w-scroll">' +
         '<div class="w-turn"><svg viewBox="-50 -50 100 100"><circle r="46" class="rg"/><path class="turn-arrow" d="M0 -38 L16 -6 L6 -6 L6 30 L-6 30 L-6 -6 L-16 -6 Z"/></svg>' +
         '<div><span class="lbl">HABITAT</span><b data-t="habDist"></b><small data-t="habBearing"></small></div></div>' +
         '<div class="w-delay"><div><span class="lbl">WALK TIME</span><b data-t="walkback"></b></div><div data-sev="margin"><span class="lbl">MARGIN</span><b data-t="margin"></b></div></div>' +
-        (S.returning ? '<div class="w-sent ok"><i>✓</i>RETURN ROUTE ACTIVE<small>Follow arrow · crew tracking</small></div>' : hold('startReturn', 'START RETURN ROUTE', 'red wide', 1200));
+        (S.returning ? '<div class="w-sent ok"><i>✓</i>RETURN ROUTE ACTIVE<small>Follow arrow · crew tracking</small></div>' : hold('startReturn', 'START RETURN ROUTE', 'red wide', 1200)) +
+        '</div>';
     },
 
     emMedical: function () {
