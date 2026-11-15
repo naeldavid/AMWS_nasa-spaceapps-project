@@ -251,7 +251,7 @@
     function loop(now) {
       var dt = Math.min(0.25, (now - last) / 1000); last = now;
       accSim += dt; accUI += dt; accSample += dt;
-      while (accSim >= 0.1) { A.sim.step(0.1); A.demo.tick(0.1); accSim -= 0.1; }
+      while (accSim >= 0.1) { A.sim.step(0.1); A.demo.tick(0.1 * S.timeScale); accSim -= 0.1; }
       if (accUI >= 0.25) { accUI = 0; evaluate(); }
       if (accSample >= 1) { accSample = 0; A.sim.sample(); A.dashboard.sample(); }
       A.dashboard.frame(dt);
