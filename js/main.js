@@ -235,6 +235,7 @@
     try { saved = localStorage.getItem('amws-view') || 'desktop'; } catch (e) {}
     if (/[?&]view=wrist/.test(location.search)) saved = 'wrist';
     setView(saved);
+    if (/[?&]demo=1(?:&|$)/.test(location.search) && A.demo && A.demo.start) { A.demo.start(); }
 
     /* ---- main loop ---- */
     var last = performance.now(), accSim = 0, accUI = 0, accSample = 0;

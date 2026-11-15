@@ -494,6 +494,7 @@ body.drawer-open .drawer-backdrop { display: block; }
 .demo-bar  { height: 3px; background: var(--white-08); border-radius: 2px; overflow: hidden; margin: var(--s2) 0; }
 .demo-prog { display: block; height: 100%; background: var(--blue); border-radius: 2px; width: 0; transition: width 0.2s linear; }
 .demo-btns { display: flex; gap: var(--s2); }
+.demo-cta { margin-top: 4px; min-height: 44px; padding: 10px 18px; font-weight: 700; letter-spacing: .08em; }
 
 /* ---- Footer ---- */
 .foot {
