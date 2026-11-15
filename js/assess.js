@@ -1,170 +1,353 @@
 /* =========================================================================
-   assess.js — Status classification, Mission Readiness score, Emergency
-   Risk Engine and alert generation. Decision-support CONCEPT only.
+   AMWS — assess.js — Alert classification and emergency controller.
+
+   DESIGN:
+   ─ Each parameter classified independently against its own thresholds
+     (Emergency / Warning / Caution / Nominal). Overall = highest active class.
+   ─ Return margin generates CAUTION or WARNING only — never Emergency.
+     "CANNOT REACH HAB" is a top-priority Warning.
+   ─ Auto-emergency triggers for EXACTLY THREE conditions (sourced):
+       • Suit pressure < 3.5 psi  (rapid decompression — source: config.js)
+       • CO₂ > 15 mmHg            (toxic inspired CO₂ — source: config.js)
+       • O₂ supply < 10%          (critical supply — source: config.js)
+   ─ No readiness score. No risk-count rules. No stress/fatigue/hydration.
+   ─ ASSUMPTION badges: any alert driven by an ASSUMPTION threshold carries
+     a flag A.alerts.isAssumed(key) that the UI can display.
    ========================================================================= */
 (function (A) {
   'use strict';
-  var S = A.state, L = A.LIMITS;
 
-  /* Severity: 0 nominal · 1 warning · 2 critical */
-  function sev(key, val) {
-    var l = L[key]; if (!l) return 0;
-    if ((l.critLo !== undefined && val < l.critLo) || (l.critHi !== undefined && val > l.critHi)) return 2;
-    if ((l.warnLo !== undefined && val < l.warnLo) || (l.warnHi !== undefined && val > l.warnHi)) return 1;
-    return 0;
+  var S = A.state;
+  var C = A; // config constants
+
+  /* -----------------------------------------------------------------------
+     SEV: 0 = nominal, 1 = caution, 2 = warning, 3 = emergency
+     Maps to NASA C&W: Advisory/Nominal → Caution → Warning → Emergency
+     (source: NTRS 20240003565)
+     ----------------------------------------------------------------------- */
+  var SEV_NOMINAL   = 0;
+  var SEV_CAUTION   = 1;
+  var SEV_WARNING   = 2;
+  var SEV_EMERGENCY = 3;
+
+  /* Classify a single parameter value. Returns 0-3. */
+  function sevParam(key, val) {
+    var l = C.LIMITS[key];
+    if (!l) return SEV_NOMINAL;
+
+    // Emergency tier
+    if ((l.emergLo !== undefined && val < l.emergLo) ||
+        (l.emergHi !== undefined && val > l.emergHi)) return SEV_EMERGENCY;
+
+    // Warning tier
+    if ((l.warnLo !== undefined && val < l.warnLo) ||
+        (l.warnHi !== undefined && val > l.warnHi)) return SEV_WARNING;
+
+    // Caution tier
+    if ((l.cautionLo !== undefined && val < l.cautionLo) ||
+        (l.cautionHi !== undefined && val > l.cautionHi)) return SEV_CAUTION;
+
+    return SEV_NOMINAL;
   }
 
-  /* Map a value to a 0..100 sub-score: 100 inside normal band, 0 at critical bound. */
-  function band(key, val) {
-    var l = L[key], n = l.normal;
-    /* "lower is better" indices (fatigue, stress): graded across the whole range */
-    if (key === 'fatigue' || key === 'stress') {
-      var c = l.critHi;
-      return val <= n[1] ? 100 - val * 0.5 : Math.max(0, (100 - n[1] * 0.5) * (c - val) / (c - n[1]));
-    }
-    /* inside normal band: 100 at centre, 92 at the edges */
-    if (val >= n[0] && val <= n[1]) {
-      var mid = (n[0] + n[1]) / 2, half = (n[1] - n[0]) / 2 || 1;
-      if (key === 'spo2' || key === 'hydration') return 92 + 8 * (val - n[0]) / (n[1] - n[0]);
-      return 100 - 8 * Math.abs(val - mid) / half;
-    }
-    if (val < n[0]) {
-      var lo = l.critLo !== undefined ? l.critLo : n[0] - 1;
-      return Math.max(0, 100 * (val - lo) / (n[0] - lo));
-    }
-    var hi = l.critHi !== undefined ? l.critHi : n[1] + 1;
-    return Math.max(0, 100 * (hi - val) / (hi - n[1]));
+  /* Legacy two-level (0/1/2) helper for UI bindings expecting sev-0/1/2 CSS classes.
+     Maps: nominal→0, caution→1, warning→1, emergency→2 */
+  function sevLegacy(key, val) {
+    var s = sevParam(key, val);
+    return s === SEV_EMERGENCY ? 2 : s >= SEV_CAUTION ? 1 : 0;
   }
 
-  /* -------- Mission Readiness (weighted, capped by any critical) ----------- */
-  var WEIGHTS = [
-    ['Heart rate stability', 'hr', 0.15], ['Oxygen saturation', 'spo2', 0.2], ['Body temperature', 'temp', 0.1],
-    ['Respiration', 'resp', 0.1], ['Fatigue', 'fatigue', 0.12], ['Stress', 'stress', 0.1],
-    ['Sleep / recovery', 'sleep', 0.11], ['Hydration', 'hydration', 0.12]
-  ];
+  /* Which thresholds are ASSUMPTION vs sourced — for UI badge display.
+     ASSUMPTION: all vital thresholds (see config.js comments); CO₂ caution/warning
+     are ASSUMPTION (15 mmHg limit is sourced, intermediate bands are not).
+     source: config.js inline comments */
+  var ASSUMED_THRESHOLDS = {
+    hr: true, spo2: true, temp: true, resp: true,
+    suitT: true, watchBatt: true, signal: true,
+    // CO₂ caution/warning bands are ASSUMPTION; emergency (15 mmHg) is sourced
+    co2_caution: true, co2_warning: true,
+    // O₂/batt/coolant/scrubber % bands are ASSUMPTION
+    o2: true, suitBatt: true, coolant: true, scrubber: true,
+    // Margin bands: WARNING anchored to 30-min reserve (sourced); CAUTION is ASSUMPTION
+    margin_caution: true
+  };
 
-  function readiness() {
-    var v = S.v, crit = false;
-    var factors = WEIGHTS.map(function (w) {
-      var val = w[1] === 'sleep' ? S.sleepH : v[w[1]];
-      var sc = w[1] === 'sleep' ? Math.max(0, Math.min(100, (S.sleepH - 4) / 4 * 100)) : band(w[1], val);
-      if (w[1] !== 'sleep' && sev(w[1], val) === 2) crit = true;
-      return { name: w[0], score: sc, weight: w[2] };
-    });
-    var score = factors.reduce(function (s, f) { return s + f.score * f.weight; }, 0);
-    if (crit) score = Math.min(score, 40);
-    score = Math.round(score);
-    var label = score >= 80 ? 'READY' : score >= 60 ? 'LIMITED' : 'NOT READY';
-    return { score: score, label: label, sev: score >= 80 ? 0 : score >= 60 ? 1 : 2, factors: factors };
-  }
-
-  /* -------- Rules: each yields an issue with local recommended action ------ */
+  /* -----------------------------------------------------------------------
+     RULES — each active rule produces one alert entry.
+     Ordered by severity (most severe first within group).
+     ----------------------------------------------------------------------- */
   function rules() {
     var v = S.v, out = [];
-    function add(key, s, title, action, group) { if (s > 0) out.push({ key: key, sev: s, title: title, action: action, group: group }); }
-    var hrS = sev('hr', v.hr);
-    add('hr', hrS, v.hr > 100 ? (hrS === 2 ? 'HEART RATE CRITICAL' : 'ELEVATED HEART RATE') : 'LOW HEART RATE',
-        'Reduce workload · rest in shade · re-check in 2 min', 'HEALTH');
-    add('spo2', sev('spo2', v.spo2), sev('spo2', v.spo2) === 2 ? 'SpO₂ CRITICAL' : 'LOW SpO₂',
-        'Stop activity · verify O₂ flow · open secondary O₂', 'HEALTH');
-    add('temp', sev('temp', v.temp), v.temp > 37.5 ? 'BODY TEMP HIGH' : 'BODY TEMP LOW',
-        'Adjust LCVG cooling · reduce workload', 'HEALTH');
-    add('resp', sev('resp', v.resp), 'RESPIRATION ABNORMAL', 'Slow breathing · check CO₂ level', 'HEALTH');
-    add('fatigue', sev('fatigue', v.fatigue), 'HIGH FATIGUE (DERIVED)', 'Plan rest · defer non-critical tasks', 'HEALTH');
-    add('hydration', sev('hydration', v.hydration), 'LOW HYDRATION', 'Drink from suit bag · 250 ml', 'HEALTH');
-    add('co2', sev('co2', v.co2), sev('co2', v.co2) === 2 ? 'CO₂ CRITICAL' : 'CO₂ RISING',
-        'Switch to secondary CO₂ scrubber · reduce workload', 'LIFE SUPPORT');
-    var pS = sev('suitP', v.suitP);
-    add('suitP', pS, v.suitP < 4.1 ? (pS === 2 ? 'SUIT PRESSURE CRITICAL' : 'SUIT PRESSURE LOW') : 'SUIT PRESSURE HIGH',
-        'Leak check · secondary O₂ open · return to habitat', 'LIFE SUPPORT');
-    add('o2', sev('o2', S.o2), 'O₂ SUPPLY LOW', 'Terminate EVA · return to habitat', 'LIFE SUPPORT');
-    add('suitBatt', sev('suitBatt', S.suitBatt), 'SUIT BATTERY LOW', 'Shed non-essential loads · plan return', 'LIFE SUPPORT');
-    add('watchBatt', sev('watchBatt', S.watchBatt), 'WRIST UNIT BATTERY LOW', 'Enable low-power display', 'SYSTEM');
-    add('suitT', sev('suitT', v.suitT), 'SUIT TEMPERATURE OFF-NOMINAL', 'Adjust cooling loop', 'LIFE SUPPORT');
-    var sigS = sev('signal', v.signal);
-    add('signal', sigS, sigS === 2 ? 'EARTH LINK LOST (LOS)' : 'EARTH LINK DEGRADED',
-        'Use habitat/crew link · follow local procedures', 'COMMS');
 
-    /* Return-margin rule: consumables left vs. time to walk back to habitat */
-    if (S.phase === 'SURFACE') {
-      var margin = Math.min(A.sim.o2Seconds(), A.sim.battSeconds()) - A.sim.walkbackSeconds();
-      var mS = margin < 15 * 60 ? 2 : margin < 45 * 60 ? 1 : 0;
-      add('margin', mS, 'RETURN MARGIN ' + (mS === 2 ? 'CRITICAL' : 'LOW'), 'Begin return to habitat now', 'MISSION');
+    function add(key, sev, title, action, group, assumed) {
+      if (sev > SEV_NOMINAL) {
+        out.push({ key: key, sev: sev, title: title, action: action,
+                   group: group, assumed: !!assumed });
+      }
     }
+
+    /* ---- HEALTH ---- */
+    var hrS = sevParam('hr', v.hr);
+    if (hrS > SEV_NOMINAL) {
+      add('hr', hrS,
+          v.hr > C.LIMITS.hr.normal[1] ? 'ELEVATED HEART RATE' : 'LOW HEART RATE',
+          'Reduce workload · rest · re-check in 2 min', 'HEALTH', true); // ASSUMPTION threshold
+    }
+
+    var spo2S = sevParam('spo2', v.spo2);
+    if (spo2S > SEV_NOMINAL) {
+      add('spo2', spo2S,
+          spo2S === SEV_EMERGENCY ? 'SpO₂ CRITICAL — HYPOXIA RISK' : 'LOW SpO₂',
+          'Stop activity · verify O₂ flow · open secondary O₂', 'HEALTH', true);
+    }
+
+    var tempS = sevParam('temp', v.temp);
+    if (tempS > SEV_NOMINAL) {
+      add('temp', tempS,
+          v.temp > C.LIMITS.temp.normal[1] ? 'BODY TEMP HIGH' : 'BODY TEMP LOW',
+          'Adjust LCVG cooling · reduce workload', 'HEALTH', true);
+    }
+
+    var respS = sevParam('resp', v.resp);
+    if (respS > SEV_NOMINAL) {
+      add('resp', respS, 'RESPIRATION ABNORMAL',
+          'Slow breathing · check CO₂ level', 'HEALTH', true);
+    }
+
+    /* ---- LIFE SUPPORT ---- */
+    var co2S = sevParam('co2', v.co2);
+    if (co2S > SEV_NOMINAL) {
+      // Emergency level (15 mmHg) is sourced; caution/warning bands are ASSUMPTION
+      var co2Assumed = (co2S < SEV_EMERGENCY);
+      add('co2', co2S,
+          co2S === SEV_EMERGENCY ? 'CO₂ CRITICAL — TOXIC LEVEL' : 'CO₂ RISING',
+          'Switch to secondary CO₂ scrubber · reduce workload · return to hab', 'LIFE SUPPORT', co2Assumed);
+    }
+
+    var suitPS = sevParam('suitP', v.suitP);
+    if (suitPS > SEV_NOMINAL) {
+      add('suitP', suitPS,
+          v.suitP < C.LIMITS.suitP.normal[0] ? 'SUIT PRESSURE LOW' : 'SUIT PRESSURE HIGH',
+          'Leak check · secondary O₂ open · return to habitat', 'LIFE SUPPORT', true);
+    }
+
+    var o2S = sevParam('o2', S.o2);
+    if (o2S > SEV_NOMINAL) {
+      add('o2', o2S, 'O₂ SUPPLY LOW',
+          'Terminate EVA · return to habitat', 'LIFE SUPPORT', true);
+    }
+
+    var battS = sevParam('suitBatt', S.suitBatt);
+    if (battS > SEV_NOMINAL) {
+      add('suitBatt', battS, 'SUIT BATTERY LOW',
+          'Shed non-essential loads · plan return', 'LIFE SUPPORT', true);
+    }
+
+    var coolS = sevParam('coolant', S.coolant);
+    if (coolS > SEV_NOMINAL) {
+      add('coolant', coolS, 'COOLING WATER LOW',
+          'Reduce workload · plan return', 'LIFE SUPPORT', true);
+    }
+
+    var scrubS = sevParam('scrubber', S.scrubber);
+    if (scrubS > SEV_NOMINAL) {
+      add('scrubber', scrubS, 'CO₂ SCRUBBER LOW',
+          'Switch to secondary scrubber · plan return', 'LIFE SUPPORT', true);
+    }
+
+    var suitTS = sevParam('suitT', v.suitT);
+    if (suitTS > SEV_NOMINAL) {
+      add('suitT', suitTS, 'SUIT TEMPERATURE OFF-NOMINAL',
+          'Adjust cooling loop', 'LIFE SUPPORT', true);
+    }
+
+    /* ---- SYSTEM ---- */
+    var wbS = sevParam('watchBatt', S.watchBatt);
+    if (wbS > SEV_NOMINAL) {
+      add('watchBatt', wbS, 'WRIST UNIT BATTERY LOW',
+          'Enable low-power display', 'SYSTEM', true);
+    }
+
+    /* ---- COMMS ---- */
+    var sigS = sevParam('signal', v.signal);
+    if (sigS > SEV_NOMINAL) {
+      add('signal', sigS,
+          sigS === SEV_EMERGENCY ? 'EARTH LINK LOST (LOS)' : 'EARTH LINK DEGRADED',
+          'Use habitat / crew link · follow local procedures', 'COMMS', true);
+    }
+
+    /* ---- ENVIRONMENT: radiation ---- */
     if (S.radLevel !== 'NORMAL') {
-      add('rad', S.radLevel === 'SPE' ? 2 : 1, S.radLevel === 'SPE' ? 'SOLAR PARTICLE EVENT' : 'RADIATION ELEVATED',
-          S.radLevel === 'SPE' ? 'Seek storm shelter immediately' : 'Minimise EVA time · monitor dose', 'ENVIRONMENT');
+      var radSev = S.radLevel === 'SPE' ? SEV_EMERGENCY : SEV_CAUTION;
+      add('rad', radSev,
+          S.radLevel === 'SPE' ? 'SOLAR PARTICLE EVENT — SEEK SHELTER' : 'RADIATION ELEVATED',
+          S.radLevel === 'SPE' ? 'Enter storm shelter immediately · minimise exposure' : 'Minimise EVA time · monitor dose',
+          'ENVIRONMENT', true); // multipliers are ASSUMPTION
     }
-    return out.sort(function (a, b) { return b.sev - a.sev; });
-  }
 
-  /* -------- Emergency Risk Engine: combines issues into one level ---------- */
-  var RISK = ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'];
-  function risk(issues) {
-    var crit = issues.filter(function (i) { return i.sev === 2; }).length;
-    var warn = issues.filter(function (i) { return i.sev === 1; }).length;
-    var lifeCrit = issues.some(function (i) { return i.sev === 2 && (i.group === 'LIFE SUPPORT' || i.key === 'spo2' || i.key === 'margin' || i.key === 'rad'); });
-    var lvl = 0;
-    if (warn === 1) lvl = 1;
-    if (warn >= 2 || crit === 1) lvl = 2;
-    if (crit >= 2 || lifeCrit || (crit >= 1 && warn >= 2)) lvl = 3;
-    return { level: lvl, label: RISK[lvl], crit: crit, warn: warn };
-  }
+    // Career dose alert
+    var dosePct = S.doseMission / C.CAREER_LIMIT_MSV * 100;
+    if (dosePct >= C.RAD_WARNING_PCT) {
+      add('careerDose', SEV_WARNING, 'CAREER DOSE WARNING — ' + dosePct.toFixed(0) + '%',
+          'Consult flight surgeon · limit further exposure', 'ENVIRONMENT', true);
+    } else if (dosePct >= C.RAD_CAUTION_PCT) {
+      add('careerDose', SEV_CAUTION, 'CAREER DOSE CAUTION — ' + dosePct.toFixed(0) + '%',
+          'Monitor cumulative dose', 'ENVIRONMENT', true);
+    }
 
-  /* -------- Alert log (persistent, with acknowledge) ----------------------- */
-  var active = {};      // key -> alert
-  A.alertLog = [];      // history
-  A.alerts = {
-    active: function () { return Object.keys(active).map(function (k) { return active[k]; }).sort(function (a, b) { return b.sev - a.sev || b.t - a.t; }); },
-    ackAll: function () { Object.keys(active).forEach(function (k) { active[k].acked = true; }); },
-    unacked: function () { return this.active().filter(function (a) { return !a.acked; }); },
-    clear: function () { active = {}; A.alertLog.length = 0; }
-  };
-  function syncAlerts(issues) {
-    var now = {}, newCrit = false;
-    issues.forEach(function (i) {
-      now[i.key] = true;
-      var a = active[i.key];
-      if (!a || a.sev < i.sev) {
-        if (i.sev === 2) newCrit = true;
-        A.alertLog.unshift({ t: S.met, sev: i.sev, title: i.title });
-        active[i.key] = { key: i.key, sev: i.sev, title: i.title, action: i.action, group: i.group, t: S.met, acked: false };
-      } else { a.sev = i.sev; a.title = i.title; }
+    /* ---- MISSION: return margin ---- */
+    if (S.phase === 'SURFACE') {
+      var rm = A.returnMargin();
+      if (isFinite(rm.test)) {
+        // Use the more conservative margin (minimum of test and cool)
+        var worstMarginS = Math.min(rm.test, rm.cool);
+
+        if (worstMarginS < 0) {
+          // CANNOT REACH: Warning, NOT Emergency (spec requirement)
+          out.push({
+            key: 'margin', sev: SEV_WARNING,
+            title: 'CANNOT REACH HAB — ' + rm.limiting + ' LIMITING',
+            action: 'Return immediately via shortest route · conserve all consumables',
+            group: 'MISSION', assumed: false, // 30-min reserve is sourced
+            marginRange: { test: rm.test, cool: rm.cool, limitingResource: rm.limiting }
+          });
+        } else if (worstMarginS < C.MARGIN_WARNING_S) {
+          out.push({
+            key: 'margin', sev: SEV_WARNING,
+            title: 'RETURN MARGIN LOW — ' + rm.limiting + ' LIMITING',
+            action: 'Begin return to habitat · 30-min EMU reserve reached',
+            group: 'MISSION', assumed: false,
+            marginRange: { test: rm.test, cool: rm.cool, limitingResource: rm.limiting }
+          });
+        } else if (worstMarginS < C.MARGIN_CAUTION_S) {
+          out.push({
+            key: 'margin', sev: SEV_CAUTION,
+            title: 'RETURN MARGIN REDUCING — ' + rm.limiting + ' LIMITING',
+            action: 'Plan return · monitor consumables',
+            group: 'MISSION', assumed: true, // 60-min band is ASSUMPTION
+            marginRange: { test: rm.test, cool: rm.cool, limitingResource: rm.limiting }
+          });
+        }
+      }
+    }
+
+    // Sort: highest severity first; within same severity, group priority
+    var GROUP_ORDER = { 'LIFE SUPPORT': 0, 'HEALTH': 1, 'MISSION': 2, 'ENVIRONMENT': 3, 'COMMS': 4, 'SYSTEM': 5 };
+    out.sort(function (a, b) {
+      if (b.sev !== a.sev) return b.sev - a.sev;
+      return (GROUP_ORDER[a.group] || 9) - (GROUP_ORDER[b.group] || 9);
     });
+    return out;
+  }
+
+  /* -----------------------------------------------------------------------
+     ALERT LOG — persistent, with acknowledge
+     ----------------------------------------------------------------------- */
+  var active = {};    // key → alert object
+  A.alertLog = [];    // time-ordered history
+
+  A.alerts = {
+    active: function () {
+      return Object.keys(active).map(function (k) { return active[k]; })
+                   .sort(function (a, b) { return b.sev - a.sev || b.t - a.t; });
+    },
+    ackAll:  function () { Object.keys(active).forEach(function (k) { active[k].acked = true; }); },
+    unacked: function () { return this.active().filter(function (a) { return !a.acked; }); },
+    clear:   function () { active = {}; A.alertLog.length = 0; },
+    isAssumed: function (key) { return !!ASSUMED_THRESHOLDS[key]; }
+  };
+
+  function syncAlerts(issues) {
+    var nowKeys = {}, newHighSev = false;
+    issues.forEach(function (i) {
+      nowKeys[i.key] = true;
+      var existing = active[i.key];
+      if (!existing || existing.sev < i.sev) {
+        if (i.sev >= SEV_WARNING) newHighSev = true;
+        A.alertLog.unshift({ t: S.met, sev: i.sev, title: i.title });
+        active[i.key] = { key: i.key, sev: i.sev, title: i.title,
+                          action: i.action, group: i.group,
+                          assumed: i.assumed, marginRange: i.marginRange,
+                          t: S.met, acked: false };
+      } else {
+        // Update title/action/marginRange in place (value may have changed)
+        existing.sev = i.sev; existing.title = i.title;
+        existing.action = i.action; existing.marginRange = i.marginRange;
+      }
+    });
+    // Clear alerts whose condition has resolved
     Object.keys(active).forEach(function (k) {
-      if (!now[k]) { A.alertLog.unshift({ t: S.met, sev: 0, title: active[k].title + ' — CLEARED' }); delete active[k]; }
+      if (!nowKeys[k]) {
+        A.alertLog.unshift({ t: S.met, sev: SEV_NOMINAL, title: active[k].title + ' — CLEARED' });
+        delete active[k];
+      }
     });
     if (A.alertLog.length > 60) A.alertLog.length = 60;
-    return newCrit;
+    return newHighSev;
   }
 
+  /* -----------------------------------------------------------------------
+     AUTO-EMERGENCY: ONLY the three sourced conditions (Part 1 of SPEC)
+     ----------------------------------------------------------------------- */
+  function checkAutoEmergency(issues) {
+    // source: config.js SUIT_PRESSURE_EMERGENCY_LO, CO2_EMERGENCY, O2_EMERGENCY_PCT
+    var v = S.v;
+    var pressureBreach = v.suitP < C.SUIT_PRESSURE_EMERGENCY_LO;
+    var co2Critical    = v.co2   > C.CO2_EMERGENCY;
+    var o2Critical     = S.o2    < C.O2_EMERGENCY_PCT;
+
+    if (!pressureBreach && !co2Critical && !o2Critical) return null;
+
+    var reasons = [];
+    if (pressureBreach) reasons.push('PRESSURE <3.5 PSI');
+    if (co2Critical)    reasons.push('CO\u2082 >' + C.CO2_EMERGENCY + ' mmHg');
+    if (o2Critical)     reasons.push('O\u2082 <' + C.O2_EMERGENCY_PCT + '%');
+    return 'AUTO: ' + reasons.join(' + ');
+  }
+
+  /* -----------------------------------------------------------------------
+     PUBLIC ASSESS API
+     ----------------------------------------------------------------------- */
   A.assess = {
-    sev: sev,
+    sev: sevParam,       // used by ui.js
+    sevLegacy: sevLegacy, // 0/1/2 CSS class helper
+
     run: function () {
-      var r = readiness(), issues = rules(), rk = risk(issues);
-      var newCrit = syncAlerts(issues);
-      /* Automatic emergency: critical risk, unless crew cancelled it for this episode */
-      if (rk.level < 3) S.emergency.suppressed = false;
-      if (rk.level === 3 && S.autoEmergency && !S.emergency.active && !S.emergency.suppressed) {
-        A.emergency.activate('AUTO · ' + (issues[0] ? issues[0].title : 'MULTIPLE CRITICAL'), true);
+      var issues = rules();
+      var newHigh = syncAlerts(issues);
+
+      // Reset suppression when no auto-emergency conditions are active
+      var autoReason = checkAutoEmergency(issues);
+      if (!autoReason) S.emergency.suppressed = false;
+
+      if (autoReason && S.autoEmergency && !S.emergency.active && !S.emergency.suppressed) {
+        A.emergency.activate(autoReason, true);
       }
-      A.last = { readiness: r, issues: issues, risk: rk, newCrit: newCrit };
+
+      A.last = { issues: issues, newHigh: newHigh };
       return A.last;
     }
   };
 
-  /* -------- Emergency controller ------------------------------------------- */
+  /* -----------------------------------------------------------------------
+     EMERGENCY CONTROLLER
+     ----------------------------------------------------------------------- */
   A.emergency = {
     activate: function (reason, auto) {
-      S.emergency.active = true; S.emergency.auto = !!auto; S.emergency.reason = reason || 'CREW-INITIATED'; S.emergency.since = S.met;
+      S.emergency.active  = true;
+      S.emergency.auto    = !!auto;
+      S.emergency.reason  = reason || 'CREW-INITIATED';
+      S.emergency.since   = S.met;
       if (A.watch) A.watch.go('emergency', true);
       if (A.audio) A.audio.alarm();
       document.body.classList.add('is-emergency');
     },
     cancel: function () {
-      S.emergency.active = false; S.emergency.suppressed = true;
+      S.emergency.active     = false;
+      S.emergency.suppressed = true;
       document.body.classList.remove('is-emergency');
       if (A.watch) A.watch.home();
     }
   };
+
 })(window.AMWS);
