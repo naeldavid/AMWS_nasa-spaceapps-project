@@ -106,4 +106,4 @@ Includes boot smoke, config/sim/assess/demo checks (see `package.json` / `tests/
 
 AMWS is a **design concept / prototype**. Not a certified medical device or flight system. Not approved by NASA, ESA, or any space agency. All readings are generated locally by simulation. Emergency procedures shown are **illustrative**, not NASA-certified flight procedures.
 
-**Team:** MLF #2 · **Members:** Yara El Kassir (Team Owner), Talia El Komy, Naël David, Reem Lougladi, Ahmad Atef, Melek Sanliturk
+**Team:** MLF #2 · **Members:** Yara El Kassir (Team Owner), Talia El Komy, Naël David, Reem Louhmadi, Ahmad Atef, Melek Sanliturk
