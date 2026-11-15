@@ -33,24 +33,35 @@
     alerts: '<svg viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>'
   };
   function navBtn(id, label, sevKey) {
-    return '<button class="w-nav-btn" data-go="' + id + '"' + (sevKey ? ' data-sev="' + sevKey + '"' : '') + '>' + ICONS[id] + '<span>' + label + '</span></button>';
+    return '<button class="w-appnav-btn" data-go="' + id + '" aria-label="' + label + '"' + (sevKey ? ' data-sev="' + sevKey + '"' : '') + '>' + ICONS[id] + '<span>' + label + '</span></button>';
+  }
+  function metricTile(go, label, valKey, unit, sevKey) {
+    return '<button class="w-metric" data-go="' + go + '" data-sev="' + sevKey + '">' +
+      '<span class="m-label">' + label + '</span>' +
+      '<span class="m-value"><span data-t="' + valKey + '"></span>' + (unit ? '<small>' + unit + '</small>' : '') + '</span>' +
+      '<span class="m-state" data-chip="' + sevKey + '"></span></button>';
   }
 
   /* ---------- screen templates ---------- */
   var T = {
     home: function () {
-      return '<div class="w-crit" data-go="alerts" hidden><i>✕</i><span class="w-crit-t"></span><small>TAP FOR ACTION</small></div>' +
-        '<div class="w-hero"><div class="w-ready" data-sev="readiness"><span class="lbl">MISSION READINESS</span>' +
-        '<div><b data-t="readiness"></b><u>%</u></div><span data-chip="readiness"></span></div>' +
-        '<div class="w-riskbox" data-sev="risk"><span class="lbl">RISK</span><span data-chip="risk"></span></div></div>' +
-        '<div class="w-tiles">' +
-        '<button class="w-tile" data-go="vitals" data-sev="hr"><span class="lbl">♥ HR</span><b data-t="hr"></b><span data-chip="hr"></span></button>' +
-        '<button class="w-tile" data-go="vitals" data-sev="spo2"><span class="lbl">SpO₂ %</span><b data-t="spo2"></b><span data-chip="spo2"></span></button>' +
-        '<button class="w-tile" data-go="suit" data-sev="suit"><span class="lbl">SUIT PSI · O₂ <em data-t="o2"></em>%</span><b data-t="suitP"></b><span data-chip="suit"></span></button>' +
-        '<button class="w-tile" data-go="comms" data-sev="link"><span class="lbl">EARTH · DELAY</span><b class="sm" data-t="delay"></b><span data-chip="link"></span></button>' +
-        '</div><div class="w-met"><span class="lbl">MET</span><b data-t="metDay"></b><b data-t="metClock"></b></div>' +
-        '<div class="w-nav">' + navBtn('vitals', 'VITALS', 'hr') + navBtn('suit', 'SUIT', 'suit') + navBtn('mission', 'MISSION') +
-        navBtn('nav', 'NAV', 'margin') + navBtn('comms', 'COMMS', 'link') + navBtn('alerts', 'ALERTS', 'alerts') + '</div>';
+      return '<div class="w-crit" hidden><button class="w-crit-main" data-go="alerts" aria-label="Open alerts"><i class="w-crit-icon">!</i><span class="w-crit-t"></span></button><button class="w-crit-ack" data-act="ack" aria-label="Acknowledge alerts">ACK</button></div>' +
+        '<div class="w-home-hero">' +
+          '<div class="w-home-hero-main"><span class="lbl">RETURN MARGIN</span>' +
+            '<div class="hero-value"><span data-t="marginMin"></span><span class="hero-unit">min</span></div>' +
+            '<div class="hero-limit">LIMIT: <span data-t="marginLimiting"></span></div></div>' +
+          '<div class="w-home-hero-side"><span class="risk-pill" data-sev="risk"><span data-chip="risk"></span></span></div>' +
+        '</div>' +
+        '<div class="w-metrics">' +
+          metricTile('vitals', 'HR', 'hr', 'bpm', 'hr') +
+          metricTile('vitals', 'SpO₂', 'spo2', '%', 'spo2') +
+          metricTile('suit', 'SUIT PSI', 'suitP', '', 'suitP') +
+          metricTile('comms', 'EARTH DELAY', 'delay', '', 'link') +
+        '</div>' +
+        '<nav class="w-appnav" aria-label="Watch apps">' +
+          navBtn('vitals', 'VITALS', 'hr') + navBtn('suit', 'SUIT', 'suit') + navBtn('mission', 'MISSION', '') +
+          navBtn('nav', 'NAV', 'margin') + navBtn('comms', 'COMMS', 'link') + navBtn('alerts', 'ALERTS', 'alerts') +
+        '</nav>';
     },
 
     vitals: function () {
@@ -324,11 +335,26 @@
         root.querySelectorAll('[data-hold]:not([data-bound])').forEach(function (b) { b.dataset.bound = 1; bindHold(b); });
       }).observe(screenEl, { childList: true, subtree: true });
       root.querySelectorAll('[data-hold]').forEach(function (b) { b.dataset.bound = 1; bindHold(b); });
-      /* physical bezel buttons */
-      root.querySelector('[data-hw="home"]').addEventListener('click', home);
-      root.querySelector('.w-status').addEventListener('click', home); // tap status bar = home (frameless small screens)
-      root.querySelector('[data-hw="back"]').addEventListener('click', back);
-      root.querySelector('[data-hw="ack"]').addEventListener('click', function () { A.alerts.ackAll(); go('alerts'); });
+      /* physical bezel / edge buttons */
+      var homeBtn = root.querySelector('[data-hw="home"]');
+      if (homeBtn) {
+        var pressTimer = null, longFired = false;
+        var clearPress = function () { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
+        homeBtn.addEventListener('pointerdown', function (e) {
+          longFired = false; clearPress();
+          pressTimer = setTimeout(function () { longFired = true; A.audio && A.audio.click && A.audio.click(); back(); }, 600);
+        });
+        ['pointerup','pointerleave','pointercancel'].forEach(function (ev) { homeBtn.addEventListener(ev, clearPress); });
+        homeBtn.addEventListener('click', function (e) {
+          if (longFired) { e.preventDefault(); e.stopPropagation(); return; }
+          home();
+        });
+      }
+      root.querySelector('.w-status').addEventListener('click', home); // tap status bar = home
+      var backBtn = root.querySelector('[data-hw="back"]');
+      if (backBtn) backBtn.addEventListener('click', back);
+      var ackBtn = root.querySelector('[data-hw="ack"]');
+      if (ackBtn) ackBtn.addEventListener('click', function () { A.alerts.ackAll(); go('alerts'); });
       actions.hwEmergency = function () { if (!S.emergency.active) A.emergency.activate('CREW-INITIATED'); };
       render();
     },

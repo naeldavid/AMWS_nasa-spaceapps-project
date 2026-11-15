@@ -69,48 +69,43 @@
   <!-- ---- WATCH STAGE ---- -->
   <section class="watch-stage" aria-label="Wrist computer">
     <div class="watch" aria-label="Simulated wrist computer">
-      <div class="strap s-top"></div>
-      <div class="strap s-bot"></div>
+      <div class="watch-glow" aria-hidden="true"></div>
+      <div class="band band-top" aria-hidden="true"></div>
       <div class="case">
-        <div class="hw hw-l">
-          <button class="hw-key" data-hw="home" aria-label="Home">HOME</button>
-          <button class="hw-key" data-hw="back" aria-label="Back">BACK</button>
-        </div>
+        <button class="edge-btn edge-left btn-hold" data-hold="hwEmergency" data-ms="1500"
+                aria-label="Emergency — hold 1.5 seconds to activate">
+          <span class="fill" aria-hidden="true"></span>
+          <span class="edge-btn-label">EMER</span>
+        </button>
 
         <div class="bezel">
-          <div class="bezel-top" aria-hidden="true">
-            <span>AMWS-1</span>
-            <span class="led sev-nominal" data-cls="overallCls" title="Master caution indicator"></span>
-            <span>S/N 0001</span>
-          </div>
           <div class="glass">
             <div class="w-status" aria-hidden="true">
-              <span id="w-utc" class="mono"></span>
-              <span class="w-st-met" data-bind="met.days" aria-label="Mission day"></span>
-              <span class="bars" data-bars="" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-              <span class="w-batt sev-nominal" data-cls="consumables.watchBatt" aria-label="Wrist battery">
-                <i><em data-bar="consumables.watchBatt.pct"></em></i>
-                <span data-bind="consumables.watchBatt.pct"></span>%
+              <span class="w-status-left"><span id="w-utc" class="mono" data-t="utc"></span><span class="w-st-met mono" data-t="metClock" aria-label="MET"></span></span>
+              <span class="w-status-right">
+                <span class="bars" data-bars="" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <span class="w-batt sev-nominal" data-cls="consumables.watchBatt" aria-label="Wrist battery">
+                  <i><em data-bar="consumables.watchBatt.pct"></em></i>
+                  <span data-bind="consumables.watchBatt.pct"></span>%
+                </span>
               </span>
             </div>
             <div class="w-screen" data-screen="home" role="region" aria-label="Watch screen" aria-live="off"></div>
+            <div class="w-disclaimer" aria-hidden="true">SIMULATED · CONCEPT · NOT FLIGHT CERTIFIED</div>
           </div>
-          <div class="bezel-bot" aria-hidden="true">SIMULATED &middot; CONCEPT UNIT &middot; NOT FLIGHT CERTIFIED</div>
         </div>
 
-        <div class="hw hw-r">
-          <button class="hw-key" data-hw="ack" aria-label="Acknowledge alarms">ACK</button>
-          <button class="hw-key hw-em btn-hold" data-hold="hwEmergency" data-ms="1500"
-                  aria-label="Emergency — hold 1.5 seconds to activate">
-            <span class="fill" aria-hidden="true"></span>
-            <span class="t">EMER</span>
-            <small>HOLD</small>
-          </button>
+        <div class="edge-btns-right">
+          <button class="edge-btn edge-right" data-hw="home" data-hw-role="primary" aria-label="Home (long press for Back)">HOME</button>
         </div>
+
+        <!-- legacy hooks kept for JS handlers (visually hidden) -->
+        <button class="hw-legacy" data-hw="back" aria-hidden="true" tabindex="-1"></button>
+        <button class="hw-legacy" data-hw="ack" aria-hidden="true" tabindex="-1"></button>
       </div>
+      <div class="band band-bot" aria-hidden="true"></div>
     </div>
     <button class="btn exit-wrist" data-view-btn="desktop">&larr; DESKTOP VIEW</button>
-    <p class="stage-cap">Interactive &mdash; tap tiles and buttons on screen. Touch targets &ge;56 px.</p>
   </section>
 
   <!-- ---- GROUND / FLIGHT CONTROLLER VIEW ---- -->

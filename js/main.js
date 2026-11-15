@@ -120,6 +120,9 @@
     var rm = A.returnMargin();
     T.walkback = rm.walkTestS ? fmt.dur(rm.walkTestS) : '\u2014';
     var marginS = rm.test !== null && isFinite(rm.test) ? rm.test : null;
+    T.marginMin = marginS === null ? '\u2014' : String(Math.round(Math.abs(marginS) / 60));
+    T.marginSign = marginS !== null && marginS < 0 ? '\u2212' : '';
+    T.marginLimiting = (rm && rm.limiting) ? rm.limiting : '\u2014';
     T.margin = marginS === null ? '\u2014' : (marginS < 0 ? '\u2212' : '+') + Math.round(Math.abs(marginS) / 60) + ' min';
     var mS = marginS === null ? 0 : marginS < 0 ? 2 : marginS < A.MARGIN_WARNING_S ? 2 : marginS < A.MARGIN_CAUTION_S ? 1 : 0;
     C.margin = { sev: mS, text: ['ADEQUATE', 'LOW', 'CRITICAL'][mS] }; SV.margin = mS;
