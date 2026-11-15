@@ -33,22 +33,39 @@ var OUR_FILES = [
 var BANNED = [
   'readiness', 'stress', 'fatigue', 'mental', 'hydration',
   'integrity', 'helmet', 'sleep', 'ecg', 'lightstrip',
-  'light-time strip', 'rover', 'terrain', 'deep-space benefits'
+  'light-time strip', 'rover', 'terrain', 'deep-space benefits', 'risk'
 ];
 
 var RE = new RegExp('\\b(' + BANNED.map(function (t) {
   return t.replace(/[-\s]/g, '[\\s\\-]');
 }).join('|') + ')\\b', 'i');
 
+function isAllowedRiskInReadme(content, matchIndex) {
+  // Allow only README sentences that explicitly state the risk engine was removed.
+  // (docs/ are not scanned.)
+  var before = content.lastIndexOf('.', matchIndex);
+  var start = before === -1 ? 0 : before + 1;
+  var after = content.indexOf('.', matchIndex);
+  var end = after === -1 ? content.length : after + 1;
+  var sentence = content.slice(start, end).toLowerCase();
+  return sentence.indexOf('risk engine') !== -1 && sentence.indexOf('removed') !== -1;
+}
+
 var found = 0;
 OUR_FILES.forEach(function (rel) {
   var f = path.join(ROOT, rel);
   var content;
   try { content = fs.readFileSync(f, 'utf8'); } catch (e) { return; }
-  var m = RE.exec(content);
-  if (m) {
-    console.log('  FAIL  ' + rel + ': found "' + m[0] + '"');
+  var re = new RegExp(RE.source, 'gi');
+  var m;
+  while ((m = re.exec(content)) !== null) {
+    var term = m[0].toLowerCase();
+    if (term === 'risk' && path.basename(rel) === 'README.md' && isAllowedRiskInReadme(content, m.index)) {
+      continue;
+    }
+    console.log('  FAIL  ' + rel + ':' + (content.slice(0, m.index).split('\n').length) + ': found "' + m[0] + '"');
     found++;
+    break;
   }
 });
 

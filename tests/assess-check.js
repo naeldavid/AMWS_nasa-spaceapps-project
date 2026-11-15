@@ -341,8 +341,8 @@ assertEq('second alert is Warning level',          mockAlerts[1].sev,   WARNING)
 assertEq('last alert is Caution',                  mockAlerts[3].sev,   CAUTION);
 console.log();
 
-/* 12. No risk-count escalation */
-console.log('--- No risk-count escalation ---');
+/* 12. No count-based escalation */
+console.log('--- No count-based escalation ---');
 // co2=12 (warning), o2=20 (warning), suitP=4.3 normal — neither CO2>15 nor O2<10 nor P<3.5
 assertFalse('2 warnings without the 3 triggers do not trigger auto-emergency', autoEmergency(4.3, 12.0, 20.0));
 assertFalse('3 warnings without the 3 triggers do not trigger auto-emergency', autoEmergency(4.3, 12.0, 20.0));

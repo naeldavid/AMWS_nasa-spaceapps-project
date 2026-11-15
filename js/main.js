@@ -44,26 +44,17 @@
     T.respTrend = trendArrow(sim.trend('resp', 0.6));
     T.co2Trend  = trendArrow(sim.trend('co2',  0.15));
 
-    /* Removed metrics — safe stubs so watch templates don't show undefined */
-    T['str'+'ess'] = 0; T.fatigue = 0;
-    C.mental   = { sev: 0, text: 'N/A' }; SV.mental   = 0;
-    C.fatigue  = { sev: 0, text: 'N/A' }; SV.fatigue  = 0;
-    C.hydration= { sev: 0, text: 'N/A' }; SV.hydration= 0;
-    C.recovery = { sev: 0, text: 'N/A' }; SV.recovery = 0;
-    C.circadian= { sev: 0, text: 'N/A' }; SV.circadian= 0;
-    T.sleep = 'N/A'; T.dayLen = '';
-
-    /* Readiness / risk — removed; safe stubs */
-    T.readiness = 100; T.readinessLabel = 'N/A'; SV.readiness = 0;
-    C.readiness = { sev: 0, text: 'N/A' }; W.readiness = 100;
-    T.risk = 'N/A'; SV.risk = 0; C.risk = { sev: 0, text: 'N/A' };
-    T.riskDetail = '';
-
     /* Alerts */
     var act = A.alerts.active();
     T.alertCount = act.length;
-    SV.alerts = act.length ? Math.min(2, Math.max.apply(null, act.map(function (a) { return a.sev; }))) : 0;
+    SV.alerts = act.length ? Math.min(2, Math.max.apply(null, act.map(function (a) { return a.sev >= 3 ? 2 : a.sev >= 1 ? 1 : 0; }))) : 0;
     C.alerts = { sev: SV.alerts, text: act.length ? act.length + ' ACTIVE' : 'NONE' };
+    var worst = 0;
+    act.forEach(function (a) { if (a.sev > worst) worst = a.sev; });
+    var overallSev = worst >= 3 ? 2 : worst >= 1 ? 1 : 0;
+    var overallLabel = worst >= 3 ? 'EMERGENCY' : worst === 2 ? 'WARNING' : worst === 1 ? 'CAUTION' : 'NOMINAL';
+    SV.overallAlert = overallSev;
+    C.overallAlert = { sev: overallSev, text: overallLabel };
 
     /* Suit */
     T.suitP = v.suitP.toFixed(2);  chip('suitP',   sev2('suitP',   v.suitP),   NOM);
@@ -75,12 +66,9 @@
     T.o2Time   = fmt.dur(sim.o2SecondsAtCurrent());
     T.battTime = fmt.dur(sim.battSecondsAtCurrent());
     W.o2 = S.o2; W.suitBatt = S.suitBatt; W.watchBatt = S.watchBatt;
-    T.helmet = 'SEALED'; C.helmet = { sev: 0, text: 'SEALED' }; SV.helmet = 0;
-    T.integrity = 'INTACT'; C.integrity = { sev: SV.suitP, text: SV.suitP === 2 ? 'BREACH SUSPECTED' : SV.suitP === 1 ? 'LEAK CHECK' : 'INTACT' };
     var suitWorst = Math.max(SV.suitP, SV.co2, SV.o2, SV.suitBatt, SV.suitT);
     C.suit = { sev: suitWorst, text: NOM[Math.min(2, suitWorst)] }; SV.suit = suitWorst;
     T.suitMode = S.phase === 'SURFACE' ? 'EVA MODE' : S.phase === 'LANDING' ? 'LAUNCH/ENTRY MODE' : 'IVA STANDBY';
-
     /* Comms */
     var delay = sim.oneWayDelay(), sig = v.signal;
     T.delay = fmt.dur(delay); T.rtt = fmt.dur(delay * 2);
@@ -97,7 +85,7 @@
     T.phase = sc.label; T.destination = loc.destination; T.site = loc.site;
     T.gravity = sc.gravity.toFixed(sc.gravity < 1 ? 2 : 1) + ' G'; T.altitude = sc.altitude;
     T.distEarth = fmt.km(sc.dist); T.distDest = sc.toGo === null ? 'ARRIVED' : fmt.km(sc.toGo);
-    T.env = sc.env; T.terrain = '';
+    T.env = sc.env;
     T.met = pad(S.met / 3600) + ':' + pad((S.met % 3600) / 60) + ':' + pad(S.met % 60);
     T.metDay = 'DAY ' + Math.floor(S.met / 86400); T.metClock = fmt.hms(S.met % 86400);
     T.utc = fmt.utc();
@@ -120,12 +108,30 @@
     var rm = A.returnMargin();
     T.walkback = rm.walkTestS ? fmt.dur(rm.walkTestS) : '\u2014';
     var marginS = rm.test !== null && isFinite(rm.test) ? rm.test : null;
-    T.marginMin = marginS === null ? '\u2014' : String(Math.round(Math.abs(marginS) / 60));
+    var coolS = rm.cool !== null && isFinite(rm.cool) ? rm.cool : null;
+    function fmtMin(s) { return String(Math.round(Math.abs(s) / 60)); }
+    T.marginMin = marginS === null ? '\u2014' : fmtMin(marginS);
     T.marginSign = marginS !== null && marginS < 0 ? '\u2212' : '';
     T.marginLimiting = (rm && rm.limiting) ? rm.limiting : '\u2014';
-    T.margin = marginS === null ? '\u2014' : (marginS < 0 ? '\u2212' : '+') + Math.round(Math.abs(marginS) / 60) + ' min';
+    if (marginS !== null && marginS < 0) {
+      T.marginHero = 'CANNOT REACH HAB';
+    } else if (marginS === null) {
+      T.marginHero = '\u2014';
+    } else {
+      T.marginHero = fmtMin(marginS) + ' min';
+    }
+    var rangeText = '';
+    if (S.location === 'MARS') {
+      if (marginS !== null && marginS >= 0) rangeText = fmtMin(marginS) + ' min (ASSUMED)';
+    } else if (marginS !== null && coolS !== null && marginS >= 0 && coolS >= 0) {
+      var hi = fmtMin(Math.max(marginS, coolS));
+      var lo = fmtMin(Math.min(marginS, coolS));
+      rangeText = hi === lo ? (hi + ' min') : (hi + ' / ' + lo + ' min');
+    }
+    T.marginRange = rangeText;
+    T.margin = marginS === null ? '\u2014' : (marginS < 0 ? 'CANNOT REACH HAB' : fmtMin(marginS) + ' min');
     var mS = marginS === null ? 0 : marginS < 0 ? 2 : marginS < A.MARGIN_WARNING_S ? 2 : marginS < A.MARGIN_CAUTION_S ? 1 : 0;
-    C.margin = { sev: mS, text: ['ADEQUATE', 'LOW', 'CRITICAL'][mS] }; SV.margin = mS;
+    C.margin = { sev: mS, text: marginS !== null && marginS < 0 ? 'CANNOT REACH HAB' : ['ADEQUATE', 'LOW', 'CRITICAL'][mS] }; SV.margin = mS;
     T.turnArrow = ((brg - S.nav.heading + 540) % 360) - 180;
 
     /* Emergency */
@@ -199,8 +205,6 @@
 
   /* ---- boot ---- */
   function boot() {
-    /* Patch nav.rover if sim.js didn't initialize it (removed feature) */
-    if (!S.nav.rover) S.nav.rover = { x: 0, y: 0 };
     A.watch.init(document.querySelector('.watch'));
     A.watch.seedMessages();
     A.dashboard.init();

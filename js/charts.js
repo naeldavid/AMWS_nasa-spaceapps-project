@@ -1,5 +1,5 @@
 /* =========================================================================
-   charts.js — Canvas visualizations: cardiac trace sweep, sparklines, light-time strip.
+   charts.js — Canvas visualizations: cardiac trace sweep, sparklines, signal-delay strip.
    ========================================================================= */
 (function (A) {
   'use strict';
@@ -66,8 +66,8 @@
     var lx = (this.x - 1 + W) % W, lv = this.buf[lx];
     if (!isNaN(lv)) { c.fillStyle = col; c.beginPath(); c.arc(lx, base - lv * amp, 2.6 * d, 0, 7); c.fill(); }
   };
-  /* Export as A.ECG so watch.js can instantiate it */
-  A.ECG = CardioTrace;
+  /* Export so watch UI can instantiate it */
+  A.CardioTrace = CardioTrace;
 
   /* ---------------- Sparkline with optional normal band ------------------- */
   A.spark = function (cv, data, opt) {
@@ -96,8 +96,8 @@
     c.fillStyle = col; c.beginPath(); c.arc(lx - 2 * d, ly, 2.4 * d, 0, 7); c.fill();
   };
 
-  /* ---------------- Light-time strip: signal packets travelling ----------- */
-  A.lightStrip = function (cv, t) {
+  /* ---------------- Signal-delay strip: packets travelling ---------------- */
+  A.signalStrip = function (cv, t) {
     if (!cv || !cv.offsetParent) return;
     fit(cv);
     var c = cv.getContext('2d'), W = cv.width, H = cv.height, d = window.devicePixelRatio || 1;

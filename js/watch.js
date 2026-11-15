@@ -6,7 +6,7 @@
 (function (A) {
   'use strict';
   var S = A.state, fmt = A.fmt;
-  var root, screenEl, stack = ['home'], current = 'home', ecg = null, sig = '';
+  var root, screenEl, stack = ['home'], current = 'home', trace = null, sig = '';
   S.msgs = [];
   S.returning = false;
   S.checklist = {};
@@ -48,9 +48,10 @@
       return '<div class="w-crit" hidden><button class="w-crit-main" data-go="alerts" aria-label="Open alerts"><i class="w-crit-icon">!</i><span class="w-crit-t"></span></button><button class="w-crit-ack" data-act="ack" aria-label="Acknowledge alerts">ACK</button></div>' +
         '<div class="w-home-hero">' +
           '<div class="w-home-hero-main"><span class="lbl">RETURN MARGIN</span>' +
-            '<div class="hero-value"><span data-t="marginMin"></span><span class="hero-unit">min</span></div>' +
-            '<div class="hero-limit">LIMIT: <span data-t="marginLimiting"></span></div></div>' +
-          '<div class="w-home-hero-side"><span class="risk-pill" data-sev="risk"><span data-chip="risk"></span></span></div>' +
+            '<div class="hero-value"><span data-t="marginHero"></span></div>' +
+            '<div class="hero-limit">LIMIT: <span data-t="marginLimiting"></span> <span class="hero-limit-note">(lowest remaining)</span></div>' +
+            '<div class="hero-range" data-t="marginRange"></div></div>' +
+          '<div class="w-home-hero-side"><span class="alert-pill" data-sev="overallAlert"><span data-chip="overallAlert"></span></span></div>' +
         '</div>' +
         '<div class="w-metrics">' +
           metricTile('vitals', 'HR', 'hr', 'bpm', 'hr') +
@@ -66,22 +67,18 @@
 
     vitals: function () {
       return head('VITALS', 'SIMULATED') +
-        '<div class="w-ecg" data-sev="hr"><canvas class="ecg"></canvas><div class="w-ecg-v"><b data-t="hr"></b><u>BPM</u></div></div>' +
+        '<div class="w-trace" data-sev="hr"><canvas class="cardio"></canvas><div class="w-trace-v"><b data-t="hr"></b><u>BPM</u></div></div>' +
         '<div class="w-scroll">' + row('HEART RATE', 'hr', 'BPM', 'hr', 'hrTrend') + row('SpO₂', 'spo2', '%', 'spo2', 'spo2Trend') +
         row('RESPIRATION', 'resp', '/MIN', 'resp', 'respTrend') + row('BODY TEMP', 'temp', '°C', 'temp', 'tempTrend') +
-        '<div class="w-row" data-sev="mental"><div class="w-row-l"><span class="lbl">MENTAL LOAD</span><small>DERIVED INDEX</small></div><div class="w-row-v"><b data-t="stress"></b><u>/100</u></div><span data-chip="mental"></span></div>' +
-        row('FATIGUE', 'fatigue', '%', 'fatigue', null) +
-        '<p class="w-note">Stress & fatigue are simulated derived metrics — not a medical diagnosis.</p></div>';
+        '<p class="w-note">Readings are simulated. Vitals thresholds shown are labelled ASSUMED where not flight-certified.</p></div>';
     },
 
     suit: function () {
       return head('SUIT', '<span data-t="suitMode"></span>') + '<div class="w-scroll">' +
-        row('PRESSURE', 'suitP', 'PSI', 'suitP', null) + row('O₂ SUPPLY', 'o2', '%', 'o2', 'o2Time') +
+        row('PRESSURE <span class="badge-assumed">ASSUMED</span>', 'suitP', 'PSI', 'suitP', null) + row('O₂ SUPPLY', 'o2', '%', 'o2', 'o2Time') +
         row('CO₂ (ppCO₂)', 'co2', 'mmHg', 'co2', 'co2Trend') + row('SUIT TEMP', 'suitT', '°C', 'suitT', null) +
         row('SUIT BATTERY', 'suitBatt', '%', 'suitBatt', 'battTime') +
-        '<div class="w-row" data-sev="integrity"><div class="w-row-l"><span class="lbl">INTEGRITY</span></div><span data-chip="integrity"></span></div>' +
-        '<div class="w-row" data-sev="helmet"><div class="w-row-l"><span class="lbl">HELMET</span></div><span data-chip="helmet"></span></div>' +
-        '<p class="w-note">Time remaining figures assume the current metabolic rate.</p></div>';
+        '<p class="w-note">Time remaining figures assume the current metabolic rate. Pressure bands are ASSUMED.</p></div>';
     },
 
     mission: function () {
@@ -116,7 +113,7 @@
         '<div><span class="lbl">WALK BACK</span><b data-t="walkback"></b><small>@ 2.5 km/h</small></div>' +
         '<div data-sev="margin"><span class="lbl">RETURN MARGIN</span><b data-t="margin"></b><span data-chip="margin"></span></div>' +
         '<div><span class="lbl">HEADING</span><b data-t="heading"></b><small data-t="altitude"></small></div></div>' +
-        '<p class="w-note tight"><span data-t="terrain"></span> · Beacon-based relative navigation concept — not GPS.</p></div>';
+        '<p class="w-note tight">Beacon-based relative navigation concept — not GPS. Simulated.</p></div>';
     },
 
     comms: function () {
@@ -187,7 +184,7 @@
     },
 
     emMedical: function () {
-      return head('MEDICAL DATA', 'SIMULATED') + '<div class="w-ecg" data-sev="hr"><canvas class="ecg"></canvas><div class="w-ecg-v"><b data-t="hr"></b><u>BPM</u></div></div>' +
+      return head('MEDICAL DATA', 'SIMULATED') + '<div class="w-trace" data-sev="hr"><canvas class="cardio"></canvas><div class="w-trace-v"><b data-t="hr"></b><u>BPM</u></div></div>' +
         '<div class="w-scroll">' + row('SpO₂', 'spo2', '%', 'spo2', 'spo2Trend') + row('RESPIRATION', 'resp', '/MIN', 'resp', 'respTrend') +
         row('BODY TEMP', 'temp', '°C', 'temp', null) +
         '<p class="w-note">Medical snapshot auto-attached to emergency packet. Not a diagnosis.</p></div>';
@@ -199,8 +196,8 @@
     screenEl.innerHTML = T[current]();
     screenEl.dataset.screen = current;
     sig = '';
-    var cv = screenEl.querySelector('canvas.ecg');
-    ecg = cv ? new A.ECG(cv, { seconds: 3, line: 2.2 }) : null;
+    var cv = screenEl.querySelector('canvas.cardio');
+    trace = cv ? new A.CardioTrace(cv, { seconds: 3, line: 2.2 }) : null;
     A.bind(screenEl); update(true);
   }
   function go(id, replace) {
@@ -374,7 +371,7 @@
       }
       update(false);
     },
-    frame: function (dt) { if (ecg) ecg.frame(dt); var lc = screenEl.querySelector('canvas.w-light'); if (lc) A.lightStrip(lc, performance.now() / 1000); },
+    frame: function (dt) { if (trace) trace.frame(dt); var lc = screenEl.querySelector('canvas.w-light'); if (lc && A.signalStrip) A.signalStrip(lc, performance.now() / 1000); },
     rerender: render,
     seedMessages: function () {
       var d = A.sim.oneWayDelay();

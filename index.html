@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#07090D">
-<meta name="description" content="AMWS — concept prototype of a wrist-mounted mission computer for astronauts. All data simulated in the browser.">
+<meta name="description" content="AMWS — concept prototype of a wrist-mounted mission computer for astronauts. Sourced from NASA data where available; every assumed value is labelled ASSUMED.">
 <meta property="og:title" content="AMWS — Astronaut Mission Wrist System">
-<meta property="og:description" content="Concept prototype: EVA return margin, suit alarms, comms delay, radiation — simulated, with sourced thresholds where labeled.">
+<meta property="og:description" content="Sourced from NASA data where available; every assumed value is labelled ASSUMED.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://amws.vercel.app">
 <meta property="og:image" content="https://amws.vercel.app/assets/screenshots/desktop.png">
@@ -48,8 +48,8 @@
       <span class="v mono" data-bind="met.label"></span>
     </div>
     <div class="item">
-      <span class="lbl">Risk</span>
-      <span data-chip="overallCls"></span>
+      <span class="lbl">Alert</span>
+      <span data-chip="overallAlert"></span>
     </div>
   </div>
 
@@ -187,7 +187,7 @@
           <table class="tbl">
             <tbody>
               <tr data-cls-row="suit.pressure">
-                <td>Suit Pressure</td>
+                <td>Suit Pressure <span class="badge-assumed">ASSUMED</span></td>
                 <td><span data-bind="suit.pressure.value"></span> PSI</td>
                 <td><span data-chip="suit.pressure.cls"></span></td>
               </tr>
@@ -409,7 +409,7 @@
     <!-- System -->
     <div class="ctl-group">
       <h4>System</h4>
-      <label class="tgl"><input type="checkbox" data-toggle="autoEmergency"> Auto-emergency on 3 sourced triggers</label>
+      <label class="tgl"><input type="checkbox" data-toggle="autoEmergency"> Auto-emergency on 3 time-critical triggers</label>
       <label class="tgl"><input type="checkbox" data-toggle="audio"> Alarm tones</label>
       <button class="btn wide" data-action="reset-all" style="margin-top:var(--s3)">&#8634; RESET ALL TO NOMINAL</button>
       <p class="fine" style="margin-top:var(--s3)">Sliders set drift targets; readings fluctuate naturally. This drawer is a presenter tool and would not exist on a flight unit.</p>
