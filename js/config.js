@@ -275,6 +275,45 @@ window.AMWS = window.AMWS || {};
 
 
   /* -----------------------------------------------------------------------
+     THERMAL COUPLING (CUSTOM environment only)
+     ----------------------------------------------------------------------- */
+  // ASSUMPTION: comfort band lower bound for illustrative thermal coupling (no sourced thermal-load model)
+  A.THERMAL_COMFORT_LO_C = 10;
+  // ASSUMPTION: comfort band upper bound for illustrative thermal coupling (no sourced thermal-load model)
+  A.THERMAL_COMFORT_HI_C = 30;
+  // ASSUMPTION: hot-side coolant drain multiplier coefficient (no sourced thermal-load model)
+  A.THERMAL_K_HOT = 0.5;
+  // ASSUMPTION: cold-side battery drain multiplier coefficient (no sourced thermal-load model)
+  A.THERMAL_K_COLD = 0.3;
+  // ASSUMPTION: maximum thermal drain factor cap (no sourced thermal-load model)
+  A.THERMAL_FACTOR_MAX = 2.0;
+
+  // ASSUMPTION: CUSTOM profile validation range (gravity, m/s²)
+  A.ENV_GRAVITY_MIN = 0;
+  // ASSUMPTION: CUSTOM profile validation range (gravity, m/s²)
+  A.ENV_GRAVITY_MAX = 30;
+  // ASSUMPTION: CUSTOM profile validation range (distance, km)
+  A.ENV_DISTANCE_MIN = 0;
+  // ASSUMPTION: CUSTOM profile validation range (distance, km)
+  A.ENV_DISTANCE_MAX = 6e9;
+  // ASSUMPTION: CUSTOM profile validation range (ambient temperature, °C)
+  A.ENV_TEMP_MIN = -270;
+  // ASSUMPTION: CUSTOM profile validation range (ambient temperature, °C)
+  A.ENV_TEMP_MAX = 500;
+  // ASSUMPTION: CUSTOM profile validation range (dose rate, mSv/day)
+  A.ENV_DOSE_MIN = 0;
+  // ASSUMPTION: CUSTOM profile validation range (dose rate, mSv/day)
+  A.ENV_DOSE_MAX = 10;
+  // ASSUMPTION: CUSTOM profile validation range (walkback pace, km/h)
+  A.ENV_PACE_MIN = 0.5;
+  // ASSUMPTION: CUSTOM profile validation range (walkback pace, km/h)
+  A.ENV_PACE_MAX = 8;
+  // ASSUMPTION: CUSTOM profile validation range (walkback metabolic rate, BTU/hr)
+  A.ENV_METABOLIC_MIN = 500;
+  // ASSUMPTION: CUSTOM profile validation range (walkback metabolic rate, BTU/hr)
+  A.ENV_METABOLIC_MAX = 3000;
+
+  /* -----------------------------------------------------------------------
      COMMUNICATION DELAYS
      ----------------------------------------------------------------------- */
 
@@ -310,21 +349,42 @@ window.AMWS = window.AMWS || {};
       name: 'EARTH', destination: 'LEO (BELOW NOMINAL EARTH ORBIT)', site: 'TRAINING / LEO STATION',
       phases: {
         TRANSIT: {
-          label: 'LEO — ORBITAL', dist: 420, toGo: null, gravity: 0.0,
+          label: 'LEO — ORBITAL', dist: 420, toGo: null, gravity: 0.0, gravityMS2: 0.0,
           altitude: '420 km',
           // source: NIH PMC 18582161 — ISS ~0.42 mSv/day
           dose: A.DOSE_RATE_ISS_MSVD,
-          relay: 0.35, env: 'MICROGRAVITY · PRESSURIZED CABIN'
+          relay: 0.35, env: 'MICROGRAVITY · PRESSURIZED CABIN',
+          // ASSUMPTION: ambient temperature for display (pressurized cabin)
+          ambientTempC: 22,
+          // ASSUMPTION: Earth/analog walkback pace
+          paceKmh: A.WALKBACK_EARTH_SPEED,
+          // ASSUMPTION: Earth/analog walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_EARTH_METABOLIC,
+          thermalCoupling: false
         },
         LANDING: {
-          label: 'ENTRY / DESCENT', dist: 80, toGo: 80, gravity: 1.6,
+          label: 'ENTRY / DESCENT', dist: 80, toGo: 80, gravity: 1.6, gravityMS2: 15.7,
           altitude: '80 km', dose: 0.3, // ASSUMPTION: re-entry shielding
-          relay: 0.35, env: 'ENTRY LOADS · SUITED'
+          relay: 0.35, env: 'ENTRY LOADS · SUITED',
+          // ASSUMPTION: ambient temperature for display (entry/suited)
+          ambientTempC: 25,
+          // ASSUMPTION: Earth/analog walkback pace
+          paceKmh: A.WALKBACK_EARTH_SPEED,
+          // ASSUMPTION: Earth/analog walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_EARTH_METABOLIC,
+          thermalCoupling: false
         },
         SURFACE: {
-          label: 'EARTH — SURFACE', dist: 0, toGo: null, gravity: 1.0,
+          label: 'EARTH — SURFACE', dist: 0, toGo: null, gravity: 1.0, gravityMS2: 9.82,
           altitude: '0.02 km', dose: 0.008, // ASSUMPTION: Earth surface background
-          relay: 0.05, env: 'ANALOG FIELD TEST'
+          relay: 0.05, env: 'ANALOG FIELD TEST',
+          // source: NASA NSSDC Earth Fact Sheet — average temperature 288 K (15 C)
+          ambientTempC: 15,
+          // ASSUMPTION: Earth/analog walkback pace
+          paceKmh: A.WALKBACK_EARTH_SPEED,
+          // ASSUMPTION: Earth/analog walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_EARTH_METABOLIC,
+          thermalCoupling: false
         }
       }
     },
@@ -332,24 +392,45 @@ window.AMWS = window.AMWS || {};
       name: 'MOON', destination: 'MOON', site: 'SOUTH POLAR SITE',
       phases: {
         TRANSIT: {
-          label: 'TRANS-LUNAR CRUISE', dist: 212000, toGo: 172400, gravity: 0.0,
+          label: 'TRANS-LUNAR CRUISE', dist: 212000, toGo: 172400, gravity: 0.0, gravityMS2: 0.0,
           altitude: '—',
           // source: MSL/RAD cruise ~1.84 mSv/day used as proxy; lunar transit-specific data not found
           dose: 1.6,
-          relay: 0.2, env: 'MICROGRAVITY · CABIN'
+          relay: 0.2, env: 'MICROGRAVITY · CABIN',
+          // ASSUMPTION: ambient temperature for display (pressurized cabin)
+          ambientTempC: 22,
+          // source: NTRS 20070016007 — lunar test walkback pace
+          paceKmh: A.WALKBACK_LUNAR_TEST_SPEED,
+          // source: NTRS 20070016007 — lunar test walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_LUNAR_TEST_METABOLIC,
+          thermalCoupling: false
         },
         LANDING: {
-          label: 'POWERED DESCENT', dist: 384400, toGo: 12, gravity: 0.3,
+          label: 'POWERED DESCENT', dist: 384400, toGo: 12, gravity: 0.3, gravityMS2: 2.94,
           altitude: '12 km',
           // ASSUMPTION: descent dose rate (between transit and surface)
           dose: 1.4,
-          relay: 0.2, env: 'DESCENT · SUITED'
+          relay: 0.2, env: 'DESCENT · SUITED',
+          // ASSUMPTION: ambient temperature for display (descent/suited)
+          ambientTempC: -20,
+          // source: NTRS 20070016007 — lunar test walkback pace
+          paceKmh: A.WALKBACK_LUNAR_TEST_SPEED,
+          // source: NTRS 20070016007 — lunar test walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_LUNAR_TEST_METABOLIC,
+          thermalCoupling: false
         },
         SURFACE: {
           label: 'MOON — SURFACE', dist: 384400, toGo: null,
           // source: Chang'e-4 LND + Apollo-era data (~1.4 mSv/day) — MEDIUM confidence
-          gravity: 0.166, altitude: '1.8 km (rim)', dose: A.DOSE_RATE_LUNAR_MSVD,
-          relay: 0.2, env: 'VACUUM · EVA'
+          gravity: 0.166, gravityMS2: 1.62, altitude: '1.8 km (rim)', dose: A.DOSE_RATE_LUNAR_MSVD,
+          relay: 0.2, env: 'VACUUM · EVA',
+          // source: NASA NSSDC Moon Fact Sheet — diurnal range 95 K to 390 K; representative display value (ASSUMPTION)
+          ambientTempC: 20,
+          // source: NTRS 20070016007 — lunar test walkback pace
+          paceKmh: A.WALKBACK_LUNAR_TEST_SPEED,
+          // source: NTRS 20070016007 — lunar test walkback metabolic rate
+          walkMetabolicBtuHr: A.WALKBACK_LUNAR_TEST_METABOLIC,
+          thermalCoupling: false
         }
       }
     },
@@ -357,24 +438,45 @@ window.AMWS = window.AMWS || {};
       name: 'MARS', destination: 'MARS', site: 'BASE ALPHA',
       phases: {
         TRANSIT: {
-          label: 'EARTH–MARS CRUISE', dist: 118000000, toGo: 96000000, gravity: 0.0,
+          label: 'EARTH–MARS CRUISE', dist: 118000000, toGo: 96000000, gravity: 0.0, gravityMS2: 0.0,
           altitude: '—',
           // source: MSL/RAD cruise phase 1.84 mSv/day (NTRS / Guo 2014)
           dose: A.DOSE_RATE_TRANSIT_MSVD,
-          relay: 0.5, env: 'MICROGRAVITY · CABIN'
+          relay: 0.5, env: 'MICROGRAVITY · CABIN',
+          // ASSUMPTION: ambient temperature for display (pressurized cabin)
+          ambientTempC: 22,
+          // ASSUMPTION: Mars walkback pace (no sourced Mars 10 km walkback test data)
+          paceKmh: A.WALKBACK_MARS_SPEED,
+          // ASSUMPTION: Mars walkback metabolic rate (no sourced Mars 10 km walkback test data)
+          walkMetabolicBtuHr: A.WALKBACK_MARS_METABOLIC,
+          thermalCoupling: false
         },
         LANDING: {
-          label: 'ENTRY, DESCENT & LANDING', dist: 226000000, toGo: 22, gravity: 0.9,
+          label: 'ENTRY, DESCENT & LANDING', dist: 226000000, toGo: 22, gravity: 0.9, gravityMS2: 8.84,
           altitude: '22 km',
           // ASSUMPTION: EDL dose rate between transit and surface
           dose: 0.9,
-          relay: 0.5, env: 'EDL · SUITED'
+          relay: 0.5, env: 'EDL · SUITED',
+          // ASSUMPTION: ambient temperature for display (EDL/suited)
+          ambientTempC: -30,
+          // ASSUMPTION: Mars walkback pace (no sourced Mars 10 km walkback test data)
+          paceKmh: A.WALKBACK_MARS_SPEED,
+          // ASSUMPTION: Mars walkback metabolic rate (no sourced Mars 10 km walkback test data)
+          walkMetabolicBtuHr: A.WALKBACK_MARS_METABOLIC,
+          thermalCoupling: false
         },
         SURFACE: {
           label: 'MARS — SURFACE', dist: 226000000, toGo: null,
           // source: MSL/RAD Hassler 2014 Science — 0.64 mSv/day on Mars surface
-          gravity: 0.38, altitude: '1.2 km', dose: A.DOSE_RATE_MARS_MSVD,
-          relay: 0.5, env: '0.6 kPa CO₂ ATM · EVA'
+          gravity: 0.38, gravityMS2: 3.73, altitude: '1.2 km', dose: A.DOSE_RATE_MARS_MSVD,
+          relay: 0.5, env: '0.6 kPa CO₂ ATM · EVA',
+          // source: NASA NSSDC Mars Fact Sheet — average temperature ~214 K (-59 C)
+          ambientTempC: -59,
+          // ASSUMPTION: Mars walkback pace (no sourced Mars 10 km walkback test data)
+          paceKmh: A.WALKBACK_MARS_SPEED,
+          // ASSUMPTION: Mars walkback metabolic rate (no sourced Mars 10 km walkback test data)
+          walkMetabolicBtuHr: A.WALKBACK_MARS_METABOLIC,
+          thermalCoupling: false
         }
       }
     }
@@ -441,7 +543,84 @@ window.AMWS = window.AMWS || {};
   ];
   // ASSUMPTION: demo scenario length (illustrative)
   A.DEMO_LENGTH = 62; // seconds
+  // ASSUMPTION: demo pressure ramp target below 3.5 psi trigger (deterministic crossing)
   A.DEMO_PRESSURE_TARGET = 3.3; // psi
   // ASSUMPTION: pressure ramp target below 3.5 psi trigger — deterministic crossing
+
+
+  /* -----------------------------------------------------------------------
+     ENVIRONMENT PROFILES
+     ----------------------------------------------------------------------- */
+  function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+  function presetEnvId(location) {
+    if (location === 'EARTH') return 'EARTH_ORBIT';
+    if (location === 'MOON') return 'MOON';
+    return 'MARS';
+  }
+
+  // ASSUMPTION: environment preset metadata for UI/profile selection
+  A.envPresets = function () {
+    return {
+      EARTH_ORBIT: { id:'EARTH_ORBIT', name:'EARTH ORBIT', location:'EARTH', phase:'TRANSIT' },
+      MOON:        { id:'MOON',        name:'MOON',        location:'MOON',  phase:'SURFACE' },
+      MARS:        { id:'MARS',        name:'MARS',        location:'MARS',  phase:'SURFACE' }
+    };
+  };
+
+  // ASSUMPTION: default CUSTOM environment initialised from Mars preset values (all fields user-assumed)
+  A.defaultCustomEnv = function () {
+    var sc = A.LOCATIONS.MARS.phases.SURFACE;
+    return {
+      id: 'CUSTOM',
+      name: 'CUSTOM',
+      custom: true,
+      // ASSUMPTION: user-supplied custom gravity (m/s²), initialised from Mars
+      gravityMS2: sc.gravityMS2,
+      // ASSUMPTION: user-supplied custom distance from Earth (km), initialised from Mars
+      distanceKm: sc.dist,
+      // ASSUMPTION: user-supplied custom ambient temperature (°C), initialised from Mars
+      ambientTempC: sc.ambientTempC,
+      // ASSUMPTION: user-supplied custom GCR dose rate (mSv/day), initialised from Mars
+      doseRateMSvDay: sc.dose,
+      // ASSUMPTION: user-supplied custom walkback pace (km/h), initialised from Mars
+      paceKmh: sc.paceKmh,
+      // ASSUMPTION: user-supplied custom walkback metabolic rate (BTU/hr), initialised from Mars
+      walkMetabolicBtuHr: sc.walkMetabolicBtuHr,
+      thermalCoupling: true
+    };
+  };
+
+  // ASSUMPTION: input validation helper for CUSTOM environment fields
+  A.validateEnvField = function (field, value) {
+    var v = Number(value);
+    if (!isFinite(v)) return { ok:false, value:null };
+    var min, max;
+    if (field === 'gravityMS2') { min=A.ENV_GRAVITY_MIN; max=A.ENV_GRAVITY_MAX; }
+    else if (field === 'distanceKm') { min=A.ENV_DISTANCE_MIN; max=A.ENV_DISTANCE_MAX; }
+    else if (field === 'ambientTempC') { min=A.ENV_TEMP_MIN; max=A.ENV_TEMP_MAX; }
+    else if (field === 'doseRateMSvDay') { min=A.ENV_DOSE_MIN; max=A.ENV_DOSE_MAX; }
+    else if (field === 'paceKmh') { min=A.ENV_PACE_MIN; max=A.ENV_PACE_MAX; }
+    else if (field === 'walkMetabolicBtuHr') { min=A.ENV_METABOLIC_MIN; max=A.ENV_METABOLIC_MAX; }
+    else return { ok:false, value:null };
+    if (v < min || v > max) return { ok:false, value:null };
+    return { ok:true, value:v };
+  };
+
+  // ASSUMPTION: illustrative thermal coupling factors (no sourced thermal-load model)
+  A.thermalFactors = function (ambientTempC, coupled) {
+    if (!coupled) return { coupled:false, coolantFactor:1, batteryFactor:1 };
+    var T = Number(ambientTempC);
+    var cf = 1, bf = 1;
+    if (isFinite(T)) {
+      if (T > A.THERMAL_COMFORT_HI_C) cf = 1 + A.THERMAL_K_HOT * (T - A.THERMAL_COMFORT_HI_C) / 100;
+      else if (T < A.THERMAL_COMFORT_LO_C) bf = 1 + A.THERMAL_K_COLD * (A.THERMAL_COMFORT_LO_C - T) / 100;
+    }
+    if (cf > A.THERMAL_FACTOR_MAX) cf = A.THERMAL_FACTOR_MAX;
+    if (bf > A.THERMAL_FACTOR_MAX) bf = A.THERMAL_FACTOR_MAX;
+    if (!(cf > 0) || !isFinite(cf)) cf = 1;
+    if (!(bf > 0) || !isFinite(bf)) bf = 1;
+    return { coupled:true, coolantFactor:cf, batteryFactor:bf };
+  };
 
 })(window.AMWS);

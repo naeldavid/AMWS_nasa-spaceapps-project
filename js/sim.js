@@ -65,6 +65,12 @@
      Uses walkback metabolic rates, NOT the current EVA metabolic rate.
      source for pace/metabolic values: see config.js WALKBACK_* constants
      ----------------------------------------------------------------------- */
+  function thermalFactors() {
+    var env = A.sim.environment ? A.sim.environment() : null;
+    if (env && env.thermal) return env.thermal;
+    return { coupled:false, coolantFactor:1, batteryFactor:1 };
+  }
+
   A.returnMargin = function () {
     var S = A.state;
     if (S.phase !== 'SURFACE') return { test: Infinity, cool: Infinity, limiting: 'N/A' };
@@ -73,30 +79,35 @@
     if (distKm < 0.03) return { test: Infinity, cool: Infinity, limiting: 'N/A' };
 
     var loc = S.location;
-    var testSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_SPEED
-                  : (loc === 'MARS') ? C.WALKBACK_MARS_SPEED
-                  :                    C.WALKBACK_EARTH_SPEED; // km/h
+    var env = A.sim.environment ? A.sim.environment() : null;
+    var useCustom = (S.environment === 'CUSTOM' && env && env.custom);
 
-    var coolSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_SPEED
-                  : (loc === 'MARS') ? C.WALKBACK_MARS_SPEED  // same (Mars has only one ASSUMPTION pace)
-                  :                    C.WALKBACK_EARTH_SPEED;
+    var testSpeed, coolSpeed, testMet, coolMet;
+    if (useCustom) {
+      testSpeed = env.paceKmh; coolSpeed = env.paceKmh;
+      testMet = env.walkMetabolicBtuHr; coolMet = env.walkMetabolicBtuHr;
+    } else {
+      testSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_SPEED
+                : (loc === 'MARS') ? C.WALKBACK_MARS_SPEED
+                :                    C.WALKBACK_EARTH_SPEED; // km/h
+      coolSpeed = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_SPEED
+                : (loc === 'MARS') ? C.WALKBACK_MARS_SPEED  // same (Mars has only one ASSUMPTION pace)
+                :                    C.WALKBACK_EARTH_SPEED;
+      testMet  = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_METABOLIC
+               : (loc === 'MARS') ? C.WALKBACK_MARS_METABOLIC
+               :                    C.WALKBACK_EARTH_METABOLIC;
+      coolMet  = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_METABOLIC
+               : (loc === 'MARS') ? C.WALKBACK_MARS_METABOLIC
+               :                    C.WALKBACK_EARTH_METABOLIC;
+    }
 
-    var testMet  = (loc === 'MOON') ? C.WALKBACK_LUNAR_TEST_METABOLIC
-                 : (loc === 'MARS') ? C.WALKBACK_MARS_METABOLIC
-                 :                    C.WALKBACK_EARTH_METABOLIC;
-
-    var coolMet  = (loc === 'MOON') ? C.WALKBACK_LUNAR_COOL_METABOLIC
-                 : (loc === 'MARS') ? C.WALKBACK_MARS_METABOLIC
-                 :                    C.WALKBACK_EARTH_METABOLIC;
+    var tf = thermalFactors();
 
     function consumableTime(met) {
-      // Time remaining (seconds). Drain rates are %/s (0-100 scale); levels are %.
-      // time = level% / rate(%/s)
       var o2T    = S.o2       / o2DrainRatePerS(met);
-      var battT  = S.suitBatt / battDrainRatePerS(met, 1);
-      var coolT  = S.coolant  / coolantDrainRatePerS(met);
+      var battT  = S.suitBatt / (battDrainRatePerS(met, 1) * (tf.batteryFactor || 1));
+      var coolT  = S.coolant  / (coolantDrainRatePerS(met) * (tf.coolantFactor || 1));
       var scrubT = S.scrubber / scrubberDrainRatePerS(met);
-
       var times = { 'O₂': o2T, 'BATTERY': battT, 'COOLANT': coolT, 'SCRUBBER': scrubT };
       var minTime = Infinity, limiting = 'O₂';
       Object.keys(times).forEach(function (k) {
@@ -107,7 +118,6 @@
 
     var testWalkS = (distKm / testSpeed) * 3600;
     var coolWalkS = (distKm / coolSpeed) * 3600;
-
     var testConsumables = consumableTime(testMet);
     var coolConsumables = consumableTime(coolMet);
 
@@ -127,6 +137,8 @@
   function defaults() {
     return {
       location: 'MARS', phase: 'SURFACE', speStage: 'NORMAL', commMode: 'NOMINAL',
+      environment: 'MARS',
+      customEnv: A.defaultCustomEnv ? A.defaultCustomEnv() : null,
       timeScale: 1, autoEmergency: true, audio: false,
 
       /* Metabolic rate — the PRIMARY state variable (BTU/hr)
@@ -215,6 +227,65 @@
     setLocation: function (loc) { S.location = loc; applyScenario(); },
     setPhase:    function (ph)  { S.phase = ph;     applyScenario(); },
     setComm:     function (m)   { S.commMode = m;   applyScenario(); },
+    environment: function () {
+      var sc = this.scenario();
+      var baseId = (S.environment === 'CUSTOM') ? 'CUSTOM' : (S.location === 'EARTH' ? 'EARTH_ORBIT' : S.location);
+      var coupled = (S.environment === 'CUSTOM');
+      var th = A.thermalFactors ? A.thermalFactors(coupled ? (S.customEnv && S.customEnv.ambientTempC) : sc.ambientTempC, coupled) : { coupled: coupled, coolantFactor:1, batteryFactor:1 };
+      if (S.environment === 'CUSTOM' && S.customEnv) {
+        var ce = S.customEnv;
+        return {
+          id: 'CUSTOM', name: 'CUSTOM', custom: true,
+          gravityMS2: ce.gravityMS2, distanceKm: ce.distanceKm,
+          oneWayDelayS: ce.distanceKm / C.C_KMS + sc.relay,
+          ambientTempC: ce.ambientTempC, doseRateMSvDay: ce.doseRateMSvDay,
+          paceKmh: ce.paceKmh, walkMetabolicBtuHr: ce.walkMetabolicBtuHr,
+          thermal: th,
+          assumed: { gravityMS2:true, distanceKm:true, ambientTempC:true, doseRateMSvDay:true, paceKmh:true, walkMetabolicBtuHr:true }
+        };
+      }
+      var assumed = {};
+      // ambient temp for presets is display-oriented; mark assumed when not from a primary source in preset context
+      assumed.gravityMS2 = (S.location === 'EARTH'); // Earth orbit/surface display values are approximations in preset context
+      assumed.distanceKm = false;
+      assumed.ambientTempC = true; // representative display values
+      assumed.doseRateMSvDay = !!(sc.dose === 1.6 || sc.dose === 1.4 || sc.dose === 0.3 || sc.dose === 0.9 || sc.dose === 0.008);
+      assumed.paceKmh = (S.location !== 'MOON');
+      assumed.walkMetabolicBtuHr = (S.location !== 'MOON');
+      return {
+        id: baseId, name: baseId === 'EARTH_ORBIT' ? 'EARTH ORBIT' : S.location, custom: false,
+        gravityMS2: sc.gravityMS2, distanceKm: sc.dist,
+        oneWayDelayS: sc.dist / C.C_KMS + sc.relay,
+        ambientTempC: sc.ambientTempC, doseRateMSvDay: sc.dose,
+        paceKmh: sc.paceKmh, walkMetabolicBtuHr: sc.walkMetabolicBtuHr,
+        thermal: { coupled:false, coolantFactor:1, batteryFactor:1 },
+        assumed: assumed
+      };
+    },
+
+    setEnvironment: function (id) {
+      S.environment = id;
+      if (id === 'CUSTOM') {
+        if (!S.customEnv) S.customEnv = A.defaultCustomEnv();
+        S.location = 'MARS'; S.phase = 'SURFACE';
+        applyScenario();
+      } else if (id === 'EARTH_ORBIT') {
+        S.location = 'EARTH'; S.phase = 'TRANSIT'; applyScenario();
+      } else if (id === 'MOON') {
+        S.location = 'MOON'; S.phase = 'SURFACE'; applyScenario();
+      } else if (id === 'MARS') {
+        S.location = 'MARS'; S.phase = 'SURFACE'; applyScenario();
+      }
+    },
+
+    setCustomEnvField: function (field, value) {
+      if (!S.customEnv) S.customEnv = A.defaultCustomEnv();
+      var res = A.validateEnvField ? A.validateEnvField(field, value) : { ok:isFinite(Number(value)), value:Number(value) };
+      if (!res.ok) return false;
+      S.customEnv[field] = res.value;
+      return true;
+    },
+
 
     /* Ramp a base or top-level key linearly over dur seconds. */
     ramp: function (key, to, dur) {
@@ -239,17 +310,19 @@
       return (Math.atan2(-S.nav.x, -S.nav.y) * 180 / Math.PI + 360) % 360;
     },
 
-    /* Current GCR dose rate in mSv/day — baseline only, no SPE multiplier.
-       SPE is a separate alert state; see A.SPE_STAGES in config.js.
-       source: location-specific dose rates in config.js LOCATIONS table */
+    /* Current GCR dose rate in mSv/day — baseline only, no SPE multiplier. */
     doseRate: function () {
+      var env = this.environment ? this.environment() : null;
+      if (env && isFinite(env.doseRateMSvDay)) return env.doseRateMSvDay;
       return this.scenario().dose; // mSv/day, GCR baseline
     },
 
     /* One-way communication delay (seconds): light-time + relay overhead */
     oneWayDelay: function () {
+      var env = this.environment ? this.environment() : null;
       var sc = this.scenario();
-      return sc.dist / C.C_KMS + sc.relay;
+      var dist = (env && isFinite(env.distanceKm)) ? env.distanceKm : sc.dist;
+      return dist / C.C_KMS + sc.relay;
     },
 
     /* ---- O2 / battery time remaining at CURRENT EVA metabolic rate ----
@@ -315,6 +388,7 @@
       var sdt = dt * S.timeScale;
       var eva = (S.phase === 'SURFACE' || S.phase === 'LANDING');
       if (eva) {
+        var tf = thermalFactors();
         S.o2 = clamp(S.o2 - o2DrainRatePerS(S.metabolic) * sdt * 100, 0, 100);
         // Extra O₂ leak at low pressure (ASSUMPTION: leak proportional to pressure drop)
         if (v.suitP < 4.0) {
@@ -325,9 +399,9 @@
           S.suitBatt += (S.suitBattTarget - S.suitBatt) * (1 - Math.exp(-dt / 3));
           if (Math.abs(S.suitBatt - S.suitBattTarget) < 0.3) S.suitBattTarget = null;
         } else {
-          S.suitBatt = clamp(S.suitBatt - battDrainRatePerS(S.metabolic, S.suitBattDrain) * sdt * 100, 0, 100);
+          S.suitBatt = clamp(S.suitBatt - battDrainRatePerS(S.metabolic, S.suitBattDrain) * (tf.batteryFactor || 1) * sdt * 100, 0, 100);
         }
-        S.coolant  = clamp(S.coolant  - coolantDrainRatePerS(S.metabolic)  * sdt * 100, 0, 100);
+        S.coolant  = clamp(S.coolant  - coolantDrainRatePerS(S.metabolic) * (tf.coolantFactor || 1) * sdt * 100, 0, 100);
         S.scrubber = clamp(S.scrubber - scrubberDrainRatePerS(S.metabolic) * sdt * 100, 0, 100);
       }
       S.watchBatt = clamp(S.watchBatt - (100 / (36 * 3600)) * sdt, 0, 100);
