@@ -1,7 +1,7 @@
 # AMWS — Astronaut Mission Wrist System
 
 **Live demo:** https://amws.vercel.app  
-**Repository:** https://github.com/naeldavid/AMWS_nasa-spaceapps-project (branch: `nael`)
+**Repository:** https://github.com/naeldavid/AMWS_nasa-spaceapps-project
 
 AMWS is a concept prototype of a wrist-mounted mission computer for astronauts during EVA and transit on the Moon, Mars, and beyond. It helps crews answer the questions that matter in real time: **Can I get back safely? What is failing? How long until Earth can respond?** All telemetry is **simulated locally in the browser**. This is **not** a medical device or flight-certified system.
 
