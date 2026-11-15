@@ -60,7 +60,7 @@
   - Margin <0 min → WARNING "CANNOT REACH HAB" (top priority queue; NO Emergency class)
 - **SOURCE**: 
   - 10 km walkback limit: NTRS 20070016007
-  - Walkback test data: Vos, Gernhardt, Lee (Jan 2007 preliminary report, 07ICES-9 / SAE 2007-01-3133)
+  - Walkback test data: Vos, Gernhardt & Lee — "The Walkback Test: A Study to Evaluate Suit and Life Support System Performance Requirements for a 10 Kilometer Traverse in a Planetary Suit." ICES 2007 conference paper, NTRS 20070016007. URL: https://ntrs.nasa.gov/citations/20070016007 (confirmed July 2007 conference; NTRS metadata shows Jan 2007 acquisition date)
     - Available at: https://ntrs.nasa.gov/citations/20070016007
     - 6 astronauts, MK III suit at 4.3 psig, lunar gravity (1/6 g) simulator
     - 10 km completed in avg 95.8 min at avg 3.94 mph (6.3 km/h)
@@ -380,7 +380,7 @@
 ### O₂ Consumption
 - **Formula**: `O₂_rate = BASE_O₂_RATE × (metabolic_rate / METABOLIC_BASE)`
 - **Baseline**: 100% O₂ lasts 7 hours at 1000 BTU/hr baseline metabolic rate
-- **SOURCE**: 7-hour nominal from CCTV 2008 EMU specs (part of unified 7h expendables); metabolic scaling from Gernhardt 2013
+- **SOURCE**: 7-hour nominal from CCTV 2008 EMU specs (part of unified 7h expendables); linear proportionality to metabolic rate (ASSUMPTION; physiological simplification — Gernhardt 2013 provides BTU/hr values, not consumable scaling factors)
 
 ### CO₂ Production
 - **Formula**: `CO₂_production = BASE_CO₂_RATE × (metabolic_rate / METABOLIC_BASE)`
