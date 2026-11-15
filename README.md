@@ -88,6 +88,22 @@ Every numeric assumption is documented in-app/config and in source docs; sourced
 - **Simulation:** deterministic-ish tick loop (physics/UI/history/canvas rates), local-only generated telemetry.
 - **Deploy:** Vercel static hosting.
 
+## Adapting to other environments
+
+AMWS uses **environment profiles** (parameter sets) so the same return-margin, delay, and dose logic runs across destinations.
+
+| Parameter | Unit | Presets (sourced/assumed as tagged) | CUSTOM |
+|---|---|---|---|
+| Gravity | m/s² | NASA fact-sheet values (Moon 1.62, Mars 3.73, Earth ref 9.82) for display; gravity does not derive energy cost | User input (**ASSUMED**) |
+| Distance from Earth | km | Existing scenario distances (Moon ~384,400 km, Mars ~226,000,000 km in preset) | User input (**ASSUMED**) |
+| Ambient surface temp | °C | Representative display values (NASA fact-sheet ranges referenced) | User input (**ASSUMED**) |
+| GCR dose rate | mSv/day | Existing preset rates (sourced/assumed as before) | User input (**ASSUMED**) |
+| Walkback pace | km/h | Existing preset paces (Moon sourced test pace; Mars/Earth assumptions as before) | User input (**ASSUMED**) |
+| Walk metabolic | BTU/hr | Existing preset rates (Moon sourced; Mars/Earth assumptions as before) | User input (**ASSUMED**) |
+
+**How to add a destination:** add a config/scenario profile row with parameters and cite sources in `docs/DATA_SOURCES.md`; anything unsourced must carry an **ASSUMED** tag/badge. **CUSTOM profile:** runtime what-if editing (all fields ASSUMED) with validation; optional illustrative thermal coupling (CUSTOM only) scales coolant/battery drain factors based on ambient temperature (not a sourced thermal-load model). **Limits:** presets do not apply ambient temperature to the consumable model; no atmosphere/pressure/composition, surface relief, slope, dust, or day/night modelling; gravity effects are not modelled as energy cost.
+
+
 ## Tests
 
 ```bash

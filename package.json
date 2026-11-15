@@ -9,7 +9,8 @@
     "assess-check": "node tests/assess-check.js",
     "demo-check":   "node tests/demo-check.js",
     "boot-smoke":   "node tests/boot-smoke.js",
+    "env-check":    "node tests/env-check.js",
     "check-cuts":   "node tools/check-cuts.js",
-    "test":         "node tests/boot-smoke.js && node tools/check-cuts.js && node tests/sim-check.js && node tests/assess-check.js && node tests/demo-check.js"
+    "test":         "node tests/boot-smoke.js && node tools/check-cuts.js && node tests/sim-check.js && node tests/assess-check.js && node tests/demo-check.js && node tests/env-check.js"
   }
 }

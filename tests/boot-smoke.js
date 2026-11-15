@@ -173,6 +173,20 @@ if (tickErr) console.error('    ' + tickErr.message + '\n' + tickErr.stack);
 assertTrue('no NaN/Infinity in snapshot() output', !nanHit);
 if (nanHit) console.error('    first bad field: ' + nanHit);
 
+/* ---- CUSTOM environment render ---- */
+var customErr = null;
+try {
+  if (A.sim.setEnvironment) A.sim.setEnvironment('CUSTOM');
+  for (var c = 0; c < 5; c++) A.sim.step(0.1);
+  A.assess.run();
+  var csnap = A.snapshot();
+  A.dashboard.tick();
+  A.presenter.sync && A.presenter.sync();
+} catch (e) { customErr = e; }
+console.log('\n--- CUSTOM environment ---');
+assertTrue('ground view renders with CUSTOM selected', !customErr);
+if (customErr) console.error('    ' + customErr.message);
+
 /* ---- Summary ---- */
 console.log('\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
 console.log('Results: ' + passed + ' passed, ' + failed + ' failed');
