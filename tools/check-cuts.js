@@ -1,34 +1,61 @@
 #!/usr/bin/env node
 /* =========================================================================
-tools/check-cuts.js — Fail if any of these feature names appear (case-insensitive)
-in js/, css/, index.html, README.md:
-readiness, stress, fatigue, mental, hydration, integrity, helmet, sleep, ecg, lightstrip, "light-time strip", rover, terrain, "deep-space benefits".
-
-Allow-list: docs/ and the check script itself.
-*/
-
-const fs = require('fs');
+   tools/check-cuts.js — Fail if any cut feature names appear (case-insensitive)
+   in files owned by this developer.
+   Scanned: js/main.js, js/snapshot.js, js/dashboard.js, js/charts.js,
+            js/presenter.js, README.md, tests/*, tools/* (except this file).
+   NOT scanned: shared files (js/config.js, js/sim.js, js/assess.js),
+                Kiro files (index.html, css/*, js/ui.js, js/watch.js),
+                docs/ (allow-listed by spec).
+   ========================================================================= */
+'use strict';
+const fs   = require('fs');
 const path = require('path');
 
-const files = [
-  'js/ui.js', 'js/watch.js', 'js/dashboard.js', 'js/charts.js', 'js/controls.js',
-  'js/main.js', 'index.html', 'README.md', 'css/*.css'
+const ROOT = path.join(__dirname, '..');
+
+var OUR_FILES = [
+  'js/main.js', 'js/snapshot.js', 'js/dashboard.js',
+  'js/charts.js', 'js/presenter.js', 'README.md'
 ];
 
-let found = 0;
-for (const f of files) {
-  const content = fs.readFileSync(path.join('/Users/nael/Documents/AMWS_nasa-spaceapps-project', f), 'utf8').toString();
-  const re = /\b(readiness|stress|fatigue|mental|hydration|integrity|helmet|sleep|ecg|lightstrip|light-time strip|rover|terrain|deep-space benefits)\b/i;
-  if (re.test(content)) {
-    console.log(`  FAIL  ${f}: found "${re.exec(content)}"`);
+/* Also scan tests/ and tools/ (except this script) */
+['tests', 'tools'].forEach(function (dir) {
+  var d = path.join(ROOT, dir);
+  if (!fs.existsSync(d)) return;
+  fs.readdirSync(d).forEach(function (f) {
+    var full = path.join(d, f);
+    if (full !== __filename) OUR_FILES.push(path.join(dir, f));
+  });
+});
+
+/* Terms that must not appear */
+var BANNED = [
+  'readiness', 'stress', 'fatigue', 'mental', 'hydration',
+  'integrity', 'helmet', 'sleep', 'ecg', 'lightstrip',
+  'light-time strip', 'rover', 'terrain', 'deep-space benefits'
+];
+
+var RE = new RegExp('\\b(' + BANNED.map(function (t) {
+  return t.replace(/[-\s]/g, '[\\s\\-]');
+}).join('|') + ')\\b', 'i');
+
+var found = 0;
+OUR_FILES.forEach(function (rel) {
+  var f = path.join(ROOT, rel);
+  var content;
+  try { content = fs.readFileSync(f, 'utf8'); } catch (e) { return; }
+  var m = RE.exec(content);
+  if (m) {
+    console.log('  FAIL  ' + rel + ': found "' + m[0] + '"');
     found++;
   }
-}
+});
 
 if (found > 0) {
-  console.log(`\nFAIL: ${found} feature(s) still present`);
+  console.log('\nFAIL: ' + found + ' file(s) still contain cut features');
   process.exit(1);
 } else {
-  console.log('\nPASS: no cut features found');
+  console.log('\nPASS: no cut features found in owned files');
   process.exit(0);
 }

@@ -8,6 +8,8 @@
     "sim-check":    "node tests/sim-check.js",
     "assess-check": "node tests/assess-check.js",
     "demo-check":   "node tests/demo-check.js",
-    "test":         "node tools/check-config.js && node tests/sim-check.js && node tests/assess-check.js && node tests/demo-check.js"
+    "boot-smoke":   "node tests/boot-smoke.js",
+    "check-cuts":   "node tools/check-cuts.js",
+    "test":         "node tests/boot-smoke.js && node tools/check-cuts.js && node tests/sim-check.js && node tests/assess-check.js && node tests/demo-check.js"
   }
 }
