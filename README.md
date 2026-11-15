@@ -54,6 +54,8 @@ Watch screens: Home · Vitals · Suit · Mission · Nav · Comms (+ message comp
 - Walkback test pace **6.3 km/h at 2374 BTU/hr** — NTRS 20070016007 (Vos, Gernhardt, Lee 2007), 10 km lunar-gravity treadmill offload, MK III suit. Subjects were cooling-limited at this pace.
 - EMU 7-hour consumables baseline — CCTV 2008 EMU specs (MEDIUM confidence). 30-min emergency reserve from same source anchors the WARNING margin threshold.
 - CO₂ 15 mmHg inspired limit — NASA Tech Bulletin 02182025; Nature s41526-026-00589-x.
+- CO₂ cabin SMAC limits: 10 mmHg (24-hour), 5.3 mmHg (7–180 day) — NTRS 20150021777.
+- Metabolic baseline 1000 BTU/hr (Apollo EVA average), peak ≤ 2200 BTU/hr — Gernhardt 2013 (EVA Ops Ch. 5.4).
 - Suit pressure 4.3 psig nominal — NTRS 20070016007; NTRS 20230008644 (xEMU).
 - Radiation dose rates: ISS 0.42 mSv/day (NIH PMC 18582161); Mars surface 0.64 mSv/day (MSL/RAD, Hassler 2014 Science); deep-space cruise 1.84 mSv/day (MSL/RAD, Guo 2014); lunar surface ~1.4 mSv/day (Chang'e-4 LND + Apollo-era, MEDIUM confidence).
 - Career limit 600 mSv — NASA-STD-3001 Vol 1 Rev B.
@@ -92,7 +94,16 @@ See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/SPEC.md](docs/SPEC.md
 npm test
 ```
 
-Runs: `check-config` (source tags on all constants) · `sim-check` (return margin math) · `assess-check` (classification logic) · `demo-check` (full 62 s demo, no NaN, valid triggers) · `check-cuts` (no cut features in owned files).
+Runs: `boot-smoke` (boot + 200-tick smoke, no NaN/Infinity) · `check-config` (source tags on all constants) · `sim-check` (return margin math) · `assess-check` (classification logic) · `demo-check` (full 62 s demo, no NaN, valid triggers) · `check-cuts` (no cut features in owned files).
+
+Additional static checks (not in `npm test`):
+
+```
+node tools/check-dom-safety.js
+node tools/check-ui-boundary.js
+```
+
+`check-dom-safety` — fails if any UI file uses `innerHTML`/`outerHTML`/`insertAdjacentHTML` from a non-literal string. `check-ui-boundary` — fails if UI files access `A.state`, sim internals, or `A.LIMITS` directly.
 
 ---
 
