@@ -335,19 +335,48 @@ This document contains all numeric values used in the AMWS prototype, with NASA 
 
 ---
 
-## Summary Statistics
+## Environment profiles (NASA planetary fact sheets)
 
-- **HIGH confidence (primary NASA sources with URLs and quotes)**: 19 values
-- **MEDIUM confidence (secondary sources, limited data, or general references)**: 6 values  
-- **ASSUMPTIONS (clinical standards or engineering estimates)**: 8 categories
+### Moon — gravity, distance, surface temperature
+- **Surface gravity (m/s²)**: 1.62
+- **Distance from Earth (km)**: roughly 357,000 km to 407,000 km (mean opposition 378,000 km)
+- **Diurnal temperature range (equator)**: 95 K to 390 K (~ -290 F to +240 F)
+- **SOURCE**: NASA NSSDC Moon Fact Sheet
+- **QUOTED**: "Surface gravity (m/s2) 1.62"; "The orbit changes over the course of the year so the distance from the Moon to Earth roughly ranges from 357,000 km to 407,000 km"; "Diurnal temperature range (equator): 95 K to 390 K (~ -290 F to +240 F)"
+- **URL**: https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html
+- **Confidence**: **ELEVATED** — NASA planetary fact sheet (primary reference compilation)
+
+### Mars — gravity, distance, surface temperature
+- **Surface gravity (mean) (m/s²)**: 3.73
+- **Distance from Earth (10^6 km)**: Minimum 54.6, Maximum 401.4
+- **Average temperature**: ~214 K (-59 C); diurnal range 184 K to 242 K (-89 to -31 C) (Viking 1 Lander site)
+- **SOURCE**: NASA NSSDC Mars Fact Sheet
+- **QUOTED**: "Surface gravity (mean) (m/s2) 3.73"; "Distance from Earth Minimum (106 km) 54.6 Maximum (106 km) 401.4"; "Average temperature: ~214 K (-59 C)"; "Diurnal temperature range: 184 K to 242 K (-89 to -31 C) (Viking 1 Lander site)"
+- **URL**: https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
+- **Confidence**: **ELEVATED** — NASA planetary fact sheet (primary reference compilation)
+
+### Earth — gravity and temperature (reference)
+- **Surface gravity (mean) (m/s²)**: 9.820 (standard 9.80665 m/s² exact, CODATA 2018)
+- **Average temperature**: 288 K (15 C)
+- **SOURCE**: NASA NSSDC Earth Fact Sheet
+- **QUOTED**: "Surface gravity (mean) (m/s2) 9.820"; "Average temperature: 288 K (15 C)"
+- **URL**: https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html
+- **Confidence**: **ELEVATED** — NASA planetary fact sheet (primary reference compilation)
+
+### Thermal coupling (CUSTOM environment only)
+- **Comfort band**: 10°C to 30°C; factors multiply coolant (hot) or battery (cold) drain at walkback and current EVA rate; capped at 2.0. Presets do not apply coupling.
+- **Constants**: THERMAL_COMFORT_LO_C=10, THERMAL_COMFORT_HI_C=30, THERMAL_K_HOT=0.5, THERMAL_K_COLD=0.3, THERMAL_FACTOR_MAX=2.0
+- **Confidence**: **ASSUMPTION** — illustrative model; no sourced thermal-load model relating ambient temperature to suit consumable drain rates.
+
+### CUSTOM profile inputs and validation ranges
+- **Fields**: gravity (m/s²), distanceKm, ambientTempC, doseRateMSvDay, paceKmh, walkMetabolicBtuHr. All CUSTOM values flagged ASSUMED.
+- **Validation ranges (clamp/reject NaN/out-of-range)**: gravity 0–30 m/s²; distanceKm 0–6e9 km; ambientTempC -270–500 °C; doseRateMSvDay 0–10 mSv/day; paceKmh 0.5–8 km/h; walkMetabolicBtuHr 500–3000 BTU/hr.
+- **Confidence**: **ASSUMPTION** — UI/input guard ranges for simulation stability and plausibility.
 
 ---
 
-## Notes on Usage
+## Summary Statistics
 
-1. **All config.js constants** reference this document with inline SOURCE or ASSUMPTION tags
-2. **MEDIUM confidence values** (EMU pressure, consumables, walking speeds) made configurable where feasible
-3. **ASSUMPTIONS** clearly labeled in UI where they drive alerts or calculations
-4. **Historical reference scenarios** (Aug 1972 SPE) labeled "ILLUSTRATIVE" in prototype
-
-**This is simulation data for a NASA Space Apps prototype. Not a medical device or certified flight system.**
+- **ELEVATED confidence (primary NASA sources with URLs and quotes)**: 22 values
+- **MEDIUM confidence (secondary sources, limited data, or general references)**: 6 values  
+- **ASSUMPTIONS (clinical standards or engineering estimates)**: 10 categories

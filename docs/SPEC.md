@@ -838,4 +838,24 @@ See `docs/DATA_SOURCES.md` for complete list with URLs, quotes, and confidence l
 
 **Model**: Metabolic rate (BTU/hr) is primary state variable; HR derived with ASSUMPTION; walkback scenario separate from EVA state; unified 7h EMU consumables basis
 
+---
+
+## Environment profiles
+
+AMWS adapts to different destinations using environment profiles: a destination is a parameter set and the same return-margin, consumable, delay, and dose logic runs on it. Presets (EARTH ORBIT, MOON, MARS) keep existing sourced/assumed values. A CUSTOM profile allows runtime what-if edits.
+
+### Parameters (per environment)
+| Parameter | Unit | Effect in model |
+|---|---|---|
+| Gravity | m/s² | Displayed environment context (see note below). |
+| Distance from Earth | km | One-way light time = `distanceKm / c` (comm/Earth-delay display). |
+| Ambient surface temperature | °C | Displayed; in CUSTOM with thermal coupling only, scales consumable drain factors (ASSUMPTION, illustrative). |
+| GCR dose rate | mSv/day | Baseline radiation dose accumulation rate. |
+| Walkback pace | km/h | Walkback duration for return-margin calculation. |
+| Walkback metabolic rate | BTU/hr | Consumable burn rate during walkback for return-margin calculation. |
+
+**Sourced vs ASSUMED:** Planetary gravity, Earth-distance ranges (Moon/Mars), and representative surface temperatures are taken from NASA NSSDC planetary fact sheets (quoted in `docs/DATA_SOURCES.md`) where used. Preset dose rates and walkback pace/metabolic values retain their existing sourced/ASSUMPTION tags. All CUSTOM profile inputs are user-supplied and flagged **ASSUMED**. Thermal coupling constants/ranges are **ASSUMPTION** (illustrative; no sourced thermal-load model).
+
+**Not modelled:** Gravity is not converted into energy cost (walking pace/energy per environment are config values, not derived from gravity; no sourced gravity-to-energy formula). Preset environments do **not** apply ambient-temperature thermal coupling to the consumable model (`thermalCoupling: false`); CUSTOM may apply an illustrative coupling. No atmosphere/pressure/composition effects, terrain, slope, dust, or day/night cycle modelling.
+
 **Ready for Phase 4 implementation.**
