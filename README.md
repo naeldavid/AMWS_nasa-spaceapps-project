@@ -1,12 +1,22 @@
 # AMWS — Astronaut Mission Wrist System
 
+**Live demo:** https://amws.vercel.app
+
 Concept prototype of a wrist-mounted mission computer for crews on the Moon, Mars, and beyond. All data is **simulated in the browser**. Not a medical device or flight system.
+
+Built for the **2024 NASA International Space Apps Challenge** — *"Wearable Technology for Astronaut Health and Safety"* track.
+
+**Team:** AMWS · **Members:** Naël David
 
 ---
 
 ## Screenshots
 
-> _Placeholder — run headless Chrome to generate: see `npm run screenshots` (not yet automated)._
+| Desktop / Ground view | Wrist computer |
+|---|---|
+| ![Desktop view](assets/screenshots/desktop.png) | ![Wrist view](assets/screenshots/wrist.png) |
+
+> Screenshots at `assets/screenshots/`. Run `python3 -m http.server 8080` and open the site to capture them.
 
 ---
 
@@ -50,6 +60,8 @@ Watch screens: Home · Vitals · Suit · Mission · Nav · Comms (+ message comp
 
 ## Data honesty
 
+Every number in this simulation is either traced to a primary NASA source or explicitly tagged **ASSUMED** in the UI and in `config.js`. Values labeled **ILLUSTRATIVE** are historical reference scenarios (e.g. the Aug 1972 SPE doses) — real data, but not predictive of future events. If you see neither label, the value is sourced; see the table below or [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for the full citation.
+
 ### Sourced values
 - Walkback test pace **6.3 km/h at 2374 BTU/hr** — NTRS 20070016007 (Vos, Gernhardt, Lee 2007), 10 km lunar-gravity treadmill offload, MK III suit. Subjects were cooling-limited at this pace.
 - EMU 7-hour consumables baseline — CCTV 2008 EMU specs (MEDIUM confidence). 30-min emergency reserve from same source anchors the WARNING margin threshold.
@@ -72,6 +84,22 @@ Watch screens: Home · Vitals · Suit · Mission · Nav · Comms (+ message comp
 - EVA planned duration and elapsed alert fractions — illustrative defaults.
 
 See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/SPEC.md](docs/SPEC.md) for full citations.
+
+---
+
+## Sources
+
+Key NASA documents cited in this prototype:
+
+| ID | Title / Description |
+|---|---|
+| [NTRS 20070016007](https://ntrs.nasa.gov/citations/20070016007) | Vos, Gernhardt, Lee — Walkback Test (10 km lunar, MK III suit, 6.3 km/h, 2374 BTU/hr) |
+| [NTRS 20040100724](https://ntrs.nasa.gov/citations/20040100724) | Aug 1972 SPE — BFO doses in spacesuit vs shelter |
+| [NTRS 20060010503](https://ntrs.nasa.gov/citations/20060010503) | Aug 1972 SPE — bone marrow dose, peak dose rate |
+| [NASA-STD-3001 Vol 1 Rev B](https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf) | Career radiation limit 600 mSv |
+| [NTRS 20150021777](https://ntrs.nasa.gov/citations/20150021777) | Cabin CO₂ SMAC limits (10 mmHg / 5.3 mmHg) |
+| [NTRS 20230008644](https://ntrs.nasa.gov/citations/20230008644) | xEMU variable pressure 4.3–8.2 psi |
+| [Gernhardt 2013](https://nasa.gov/wp-content/uploads/2023/03/gernhardt-eva-ops-chp-5.4-2013.pdf) | Apollo EVA metabolic rates (1000 BTU/hr avg, 2200 peak) |
 
 ---
 

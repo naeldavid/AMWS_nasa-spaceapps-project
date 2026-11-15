@@ -9,6 +9,8 @@
   /* Severity → icon + word (4 levels, 0-3) */
   var SEV_ICON  = { nominal: '\u2713', caution: '\u26a0', warning: '\u26a0', emergency: '\u2715' };
   var SEV_WORD  = { nominal: 'NOMINAL', caution: 'CAUTION', warning: 'WARNING', emergency: 'EMERGENCY' };
+  var SEV_SET   = { nominal: true, caution: true, warning: true, emergency: true };
+  function safeCls(cls) { return SEV_SET[cls] ? cls : 'nominal'; }
 
   /* Spark canvas registry: key → { cv, min, max, band } */
   var sparks = {};
@@ -44,13 +46,15 @@
     var hd = document.createElement('div');
     hd.className = 'cons-hd';
     var lbl = document.createElement('span');
-    lbl.textContent = label + (isLimiting ? ' \u2014 LOWEST REMAINING' : '');
+    lbl.textContent = String(label).replace(/[^A-Za-z0-9 _\-]/g, '') + (isLimiting ? ' \u2014 LOWEST REMAINING' : '');
+    var safePct = Math.min(100, Math.max(0, parseInt(item.pct, 10) || 0));
     var val = document.createElement('b');
-    val.className = 'sev-' + item.cls;
-    val.textContent = item.pct + '%';
-    if (item.secondsRemaining !== null && isFinite(item.secondsRemaining)) {
+    val.className = 'sev-' + safeCls(item.cls);
+    val.textContent = safePct + '%';
+    var safeSeconds = parseInt(item.secondsRemaining, 10);
+    if (Number.isFinite(safeSeconds) && safeSeconds >= 0) {
       var t = document.createElement('small');
-      t.textContent = ' (' + A.fmt.dur(item.secondsRemaining) + ' remaining)';
+      t.textContent = ' (' + A.fmt.dur(safeSeconds) + ' remaining)';
       val.appendChild(t);
     }
     hd.appendChild(lbl); hd.appendChild(val);
@@ -58,8 +62,8 @@
     var track = document.createElement('div');
     track.className = 'cons-track';
     var fill = document.createElement('div');
-    fill.className = 'cons-fill sev-' + item.cls;
-    fill.style.width = Math.max(0, Math.min(100, item.pct)) + '%';
+    fill.className = 'cons-fill sev-' + safeCls(item.cls);
+    fill.style.width = safePct + '%';
     track.appendChild(fill);
 
     if (item.assumed) {
