@@ -69,7 +69,7 @@
     - Subjects wanted to go faster but were cooling-limited
     - Scenario: 10 km return after ~4 h surface activity
   - EMU 30-min emergency reserve: CCTV 2008 EMU specs
-- **CONFIDENCE**: HIGH for walkback pace/metabolic (sourced NASA test); ASSUMPTION for cooling-limited pace and Mars pace (configurable)
+- **CONFIDENCE**: ELEVATED for walkback pace/metabolic (sourced NASA test); ASSUMPTION for cooling-limited pace and Mars pace (configurable)
 - **CAVEAT**: Walkback test was preliminary quicklook, level treadmill, offloaded gravity simulator, prototype MK III suit, lunar only; final NASA/TP-2009-214796 report may differ
 - **Decision impact**: Determines when crew must abort EVA and return; THE critical safety metric
 
@@ -200,10 +200,10 @@
 | **Dose rate** | Current µSv/h | Location-dependent baseline | ADVISORY (normal) |
 
 **Dose rates by location** (GCR baseline):
-- ISS: 0.42 mSv/day (72 mSv/6mo) — SOURCE: NIH PMC 18582161 (HIGH)
-- Transit: 1.84 mSv/day — SOURCE: MSL/RAD cruise (USRA Deep Space 2018 paper citing MSL data) (HIGH)
+- ISS: 0.42 mSv/day (72 mSv/6mo) — SOURCE: NIH PMC 18582161 (ELEVATED)
+- Transit: 1.84 mSv/day — SOURCE: MSL/RAD cruise (USRA Deep Space 2018 paper citing MSL data) (ELEVATED)
 - Lunar surface: 1.4 mSv/day — ASSUMPTION (limited Apollo/Chang'e-4 data) (MEDIUM)
-- Mars surface: 0.64 mSv/day — SOURCE: MSL/RAD (Hassler 2014 Science) (HIGH)
+- Mars surface: 0.64 mSv/day — SOURCE: MSL/RAD (Hassler 2014 Science) (ELEVATED)
 
 **Solar Particle Event (SPE) Alert**:
 - **State**: "SPE DETECTED — SEEK SHELTER NOW"
@@ -257,7 +257,7 @@
 
 **Each alert shows**:
 - Classification icon + color
-- Title (e.g., "SUIT PRESSURE LOW")
+- Title (e.g., "SUIT PRESSURE BELOW NOMINAL")
 - Recommended action (e.g., "Leak check · secondary O₂ open · return to habitat")
 - Timestamp (MET)
 - Acknowledge button
@@ -418,7 +418,7 @@
 
 ### Thermal Model
 - **Cooling demand**: Driven by metabolic rate
-- **LCVG**: Adjustable cooling (LOW/MED/HI setting in demo controls)
+- **LCVG**: Adjustable cooling (BELOW NOMINAL/MED/HI setting in demo controls)
 - **Suit temp**: Rises if cooling insufficient for metabolic load
 - **Coolant consumption**: Scales with metabolic rate (ASSUMPTION)
 - **SOURCE**: Concept only; NASA thermal limits not found (Gernhardt 2013 discusses core temp monitoring, no alarm thresholds cited)
@@ -468,13 +468,13 @@ COOLANT_WARNING_PCT: 15,
 // CO2 limits: Cabin vs suit separated
 // Cabin SMAC: 10 mmHg (24h), 5.3 mmHg (7-180d)
 // SOURCE: NASA SMAC docs (NTRS 20150021777)
-// CONFIDENCE: HIGH
+// CONFIDENCE: ELEVATED
 CO2_CABIN_SMAC_24H: 10,      // mmHg ppCO2
 CO2_CABIN_SMAC_180D: 5.3,    // mmHg ppCO2
 
 // Suit inspired limit: 15 mmHg nominal
 // SOURCE: NASA Tech Bulletin 02182025, Nature s41526-026-00589-x
-// CONFIDENCE: HIGH
+// CONFIDENCE: ELEVATED
 CO2_SUIT_INSPIRED_LIMIT: 15, // mmHg
 
 // ASSUMPTION: CO2 alert bands (15 mmHg sourced; intermediate bands not sourced)
@@ -489,7 +489,7 @@ CO2_EMERGENCY: 15, // mmHg (sourced; triggers auto-emergency)
 // Metabolic rate: PRIMARY STATE VARIABLE
 // Range: 1000 BTU/hr Apollo EVA AVERAGE (not resting), 2200 BTU/hr peak
 // SOURCE: Gernhardt 2013 Apollo EVA data
-// CONFIDENCE: HIGH
+// CONFIDENCE: ELEVATED
 METABOLIC_RATE_BASE: 1000,  // BTU/hr (Apollo EVA average, baseline for 7h consumables)
 METABOLIC_RATE_PEAK: 2200,  // BTU/hr (peak EVA exertion)
 
@@ -504,7 +504,7 @@ HR_SCALING_FACTOR: 0.05, // (HR_current - HR_baseline) per (metabolic - baseline
 
 // Walkback limit: 10 km operational constraint
 // SOURCE: NTRS 20070016007
-// CONFIDENCE: HIGH
+// CONFIDENCE: ELEVATED
 WALKBACK_LIMIT_KM: 10,
 
 // Walkback test pace (lunar): SOURCED
@@ -514,7 +514,7 @@ WALKBACK_LIMIT_KM: 10,
 // Avg metabolic 2374 BTU/hr, max 15-min avg 2617 BTU/hr, 944 kcal total
 // Both averages "exceed Apollo and EMU cooling capabilities"; subjects wanted faster but cooling-limited
 // CAVEAT: Preliminary quicklook, level treadmill, offloaded gravity, prototype suit, lunar only
-// CONFIDENCE: HIGH (sourced NASA test data)
+// CONFIDENCE: ELEVATED (sourced NASA test data)
 WALKBACK_LUNAR_TEST_SPEED: 6.3,      // km/h
 WALKBACK_LUNAR_TEST_METABOLIC: 2374, // BTU/hr
 
@@ -578,7 +578,7 @@ SUIT_TEMP_WARNING_HI: 32, // °C (ASSUMPTION)
 
 // Career limit: 600 mSv
 // SOURCE: NASA-STD-3001 Radiation Protection Tech Brief
-// CONFIDENCE: HIGH
+// CONFIDENCE: ELEVATED
 CAREER_DOSE_LIMIT: 600, // mSv
 
 // ASSUMPTION: Career dose alert bands (600 mSv limit sourced; bands not sourced)
@@ -586,9 +586,9 @@ CAREER_DOSE_CAUTION: 400, // mSv (ASSUMPTION)
 CAREER_DOSE_WARNING: 500, // mSv (ASSUMPTION)
 
 // GCR dose rates by location
-// ISS: 0.42 mSv/day — SOURCE: NIH PMC 18582161 (HIGH)
-// Transit: 1.84 mSv/day — SOURCE: MSL/RAD cruise (HIGH)
-// Mars surface: 0.64 mSv/day — SOURCE: MSL/RAD Hassler 2014 (HIGH)
+// ISS: 0.42 mSv/day — SOURCE: NIH PMC 18582161 (ELEVATED)
+// Transit: 1.84 mSv/day — SOURCE: MSL/RAD cruise (ELEVATED)
+// Mars surface: 0.64 mSv/day — SOURCE: MSL/RAD Hassler 2014 (ELEVATED)
 // Lunar surface: 1.4 mSv/day — ASSUMPTION (Chang'e-4, Apollo-era limited data) (MEDIUM)
 DOSE_RATE_ISS: 0.42,      // mSv/day
 DOSE_RATE_TRANSIT: 1.84,  // mSv/day
@@ -600,7 +600,7 @@ DOSE_RATE_LUNAR: 1.4,     // mSv/day (ASSUMPTION)
 // ============================================================================
 
 // One-way light time
-// SOURCE: Astronomical constants (HIGH confidence)
+// SOURCE: Astronomical constants (ELEVATED confidence)
 DELAY_MOON: 1.3,        // seconds
 DELAY_MARS_MIN: 180,    // seconds (3 min at closest approach)
 DELAY_MARS_MAX: 1320,   // seconds (22 min at conjunction)
@@ -701,7 +701,7 @@ function computeReturnMargin(state) {
   } else if (margin < MARGIN_WARNING / 60) { // 30 min in hours
     alerts.push({
       classification: 'WARNING',
-      title: 'RETURN MARGIN LOW',
+      title: 'RETURN MARGIN BELOW NOMINAL',
       message: `${(margin * 60).toFixed(0)} min margin. Limiting: ${limitingResource}. Anchored to 30-min EMU reserve.`
     });
   } else if (margin < MARGIN_CAUTION / 60) { // 60 min in hours
@@ -764,7 +764,7 @@ See `docs/DATA_SOURCES.md` for complete list with URLs, quotes, and confidence l
 ## Part 7: README Updates
 
 ### Data Sources Section
-"All numeric values in this simulation are sourced from NASA technical documents, published mission data, or peer-reviewed research. Values without primary NASA sources are explicitly tagged ASSUMPTION and made configurable where feasible. See `docs/DATA_SOURCES.md` for complete source list with URLs, quotes, and confidence ratings (HIGH/MEDIUM/ASSUMPTION)."
+"All numeric values in this simulation are sourced from NASA technical documents, published mission data, or peer-reviewed research. Values without primary NASA sources are explicitly tagged ASSUMPTION and made configurable where feasible. See `docs/DATA_SOURCES.md` for complete source list with URLs, quotes, and confidence ratings (ELEVATED/MEDIUM/ASSUMPTION)."
 
 ### Known Limitations / Assumptions
 - **EMU specs**: 7h consumables from secondary source (CCTV 2008); NASA NTRS primary citation not found despite search. Tagged MEDIUM confidence.
@@ -832,7 +832,7 @@ See `docs/DATA_SOURCES.md` for complete list with URLs, quotes, and confidence l
 
 **Alignment**: NASA C&W operational standard, independent parameter classification
 
-**Honesty**: MEDIUM confidence for EMU specs (secondary sources), HIGH for walkback test data (sourced with caveats), ASSUMPTION tags for all alert bands, thresholds, and Mars/cooling-limited paces
+**Honesty**: MEDIUM confidence for EMU specs (secondary sources), ELEVATED for walkback test data (sourced with caveats), ASSUMPTION tags for all alert bands, thresholds, and Mars/cooling-limited paces
 
 **Cuts**: 17 features removed (readiness score, stress/fatigue/mental load/hydration, integrity, helmet seal, sleep, ECG sweep, light-viz, decorative elements, HR>140 speed penalty)
 

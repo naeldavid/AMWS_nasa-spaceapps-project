@@ -111,7 +111,7 @@
         '<div class="w-radar-scale">RINGS 0.5 km · HEADING-UP</div></div>' +
         '<div class="w-navgrid"><div><span class="lbl">HABITAT</span><b data-t="habDist"></b><small data-t="habBearing"></small></div>' +
         '<div><span class="lbl">WALK BACK</span><b data-t="walkback"></b><small>@ 2.5 km/h</small></div>' +
-        '<div data-sev="margin"><span class="lbl">RETURN MARGIN</span><b data-t="margin"></b><span data-chip="margin"></span></div>' +
+        '<div data-sev="margin"><span class="lbl">RETURN MARGIN</span><b data-t="margin"></b><small data-t="marginRange"></small><span data-chip="margin"></span></div>' +
         '<div><span class="lbl">HEADING</span><b data-t="heading"></b><small data-t="altitude"></small></div></div>' +
         '<p class="w-note tight">Beacon-based relative navigation concept — not GPS. Simulated.</p></div>';
     },

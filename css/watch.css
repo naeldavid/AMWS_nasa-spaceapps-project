@@ -506,3 +506,9 @@ body.view-wrist .watch-stage { min-height: calc(100dvh - 120px); }
 /* always show tiny captions */
 .w-appnav-btn span { display:block; opacity:.9; }
 .w-status { border-bottom: none; }
+
+.hero-limit-note { font-weight: 500; opacity: .8; }
+.hero-range { margin-top: 2px; font-size: 8px; color: rgba(255,255,255,.55); letter-spacing: .04em; font-family: var(--font-mono, ui-monospace, monospace); min-height: 10px; }
+.hero-value { font: 700 28px/1 var(--font-mono, ui-monospace, monospace); color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; word-break: break-word; }
+.w-home-hero-main .hero-value { font-size: 26px; }
+*:focus-visible { outline: 2px solid #5B9BFF; outline-offset: 2px; }

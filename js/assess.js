@@ -90,21 +90,21 @@
     var hrS = sevParam('hr', v.hr);
     if (hrS > SEV_NOMINAL) {
       add('hr', hrS,
-          v.hr > C.LIMITS.hr.normal[1] ? 'ELEVATED HEART RATE' : 'LOW HEART RATE',
+          v.hr > C.LIMITS.hr.normal[1] ? 'ELEVATED HEART RATE' : 'BELOW NOMINAL HEART RATE',
           'Reduce workload · rest · re-check in 2 min', 'HEALTH', true); // ASSUMPTION threshold
     }
 
     var spo2S = sevParam('spo2', v.spo2);
     if (spo2S > SEV_NOMINAL) {
       add('spo2', spo2S,
-          spo2S === SEV_EMERGENCY ? 'SpO₂ CRITICAL — HYPOXIA RISK' : 'LOW SpO₂',
+          spo2S === SEV_EMERGENCY ? 'SpO₂ EMERGENCY — HYPOXIA RISK' : 'BELOW NOMINAL SpO₂',
           'Stop activity · verify O₂ flow · open secondary O₂', 'HEALTH', true);
     }
 
     var tempS = sevParam('temp', v.temp);
     if (tempS > SEV_NOMINAL) {
       add('temp', tempS,
-          v.temp > C.LIMITS.temp.normal[1] ? 'BODY TEMP HIGH' : 'BODY TEMP LOW',
+          v.temp > C.LIMITS.temp.normal[1] ? 'BODY TEMP ELEVATED' : 'BODY TEMP BELOW NOMINAL',
           'Adjust LCVG cooling · reduce workload', 'HEALTH', true);
     }
 
@@ -120,38 +120,38 @@
       // Emergency level (15 mmHg) is sourced; caution/warning bands are ASSUMPTION
       var co2Assumed = (co2S < SEV_EMERGENCY);
       add('co2', co2S,
-          co2S === SEV_EMERGENCY ? 'CO₂ CRITICAL — TOXIC LEVEL' : 'CO₂ RISING',
+          co2S === SEV_EMERGENCY ? 'CO₂ EMERGENCY — TOXIC LEVEL' : 'CO₂ RISING',
           'Switch to secondary CO₂ scrubber · reduce workload · return to hab', 'LIFE SUPPORT', co2Assumed);
     }
 
     var suitPS = sevParam('suitP', v.suitP);
     if (suitPS > SEV_NOMINAL) {
       add('suitP', suitPS,
-          v.suitP < C.LIMITS.suitP.normal[0] ? 'SUIT PRESSURE LOW' : 'SUIT PRESSURE HIGH',
+          v.suitP < C.LIMITS.suitP.normal[0] ? 'SUIT PRESSURE BELOW NOMINAL' : 'SUIT PRESSURE ELEVATED',
           'Leak check · secondary O₂ open · return to habitat', 'LIFE SUPPORT', true);
     }
 
     var o2S = sevParam('o2', S.o2);
     if (o2S > SEV_NOMINAL) {
-      add('o2', o2S, 'O₂ SUPPLY LOW',
+      add('o2', o2S, 'O₂ SUPPLY BELOW NOMINAL',
           'Terminate EVA · return to habitat', 'LIFE SUPPORT', true);
     }
 
     var battS = sevParam('suitBatt', S.suitBatt);
     if (battS > SEV_NOMINAL) {
-      add('suitBatt', battS, 'SUIT BATTERY LOW',
+      add('suitBatt', battS, 'SUIT BATTERY BELOW NOMINAL',
           'Shed non-essential loads · plan return', 'LIFE SUPPORT', true);
     }
 
     var coolS = sevParam('coolant', S.coolant);
     if (coolS > SEV_NOMINAL) {
-      add('coolant', coolS, 'COOLING WATER LOW',
+      add('coolant', coolS, 'COOLING WATER BELOW NOMINAL',
           'Reduce workload · plan return', 'LIFE SUPPORT', true);
     }
 
     var scrubS = sevParam('scrubber', S.scrubber);
     if (scrubS > SEV_NOMINAL) {
-      add('scrubber', scrubS, 'CO₂ SCRUBBER LOW',
+      add('scrubber', scrubS, 'CO₂ SCRUBBER BELOW NOMINAL',
           'Switch to secondary scrubber · plan return', 'LIFE SUPPORT', true);
     }
 
@@ -164,7 +164,7 @@
     /* ---- SYSTEM ---- */
     var wbS = sevParam('watchBatt', S.watchBatt);
     if (wbS > SEV_NOMINAL) {
-      add('watchBatt', wbS, 'WRIST UNIT BATTERY LOW',
+      add('watchBatt', wbS, 'WRIST UNIT BATTERY BELOW NOMINAL',
           'Enable low-power display', 'SYSTEM', true);
     }
 
@@ -223,7 +223,7 @@
         } else if (worstMarginS < C.MARGIN_WARNING_S) {
           out.push({
             key: 'margin', sev: SEV_WARNING,
-            title: 'RETURN MARGIN LOW — ' + rm.limiting + ' LIMITING',
+            title: 'RETURN MARGIN BELOW NOMINAL — ' + rm.limiting + ' LIMITING',
             action: 'Begin return to habitat · 30-min EMU reserve reached',
             group: 'MISSION', assumed: false,
             marginRange: { test: rm.test, cool: rm.cool, limitingResource: rm.limiting }

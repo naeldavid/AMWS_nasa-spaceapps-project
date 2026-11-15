@@ -79,7 +79,7 @@
       }
       if (this.applied === A.DEMO.length && this.t > A.DEMO[A.DEMO.length - 1].at + 4 &&
           !S.emergency.active && !S.emergency.suppressed) {
-        A.emergency.activate('AUTO \u00b7 MULTIPLE CRITICAL', true);
+        A.emergency.activate('AUTO \u00b7 MULTIPLE TIME-EMERGENCY', true);
       }
       if (this.t >= A.DEMO_LENGTH) { this.running = false; this.done = true; }
       _status();

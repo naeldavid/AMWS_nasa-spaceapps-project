@@ -27,9 +27,9 @@
   A.buildVM = function () {
     var v = S.v, sim = A.sim, sc = sim.scenario(), loc = A.LOCATIONS[S.location];
     var T = {}, C = {}, W = {}, SV = {};
-    var NOM = ['NOMINAL', 'CAUTION', 'CRITICAL'];
-    var VIT = ['NORMAL', 'ELEVATED', 'CRITICAL'];
-    var LOWW = ['NORMAL', 'LOW', 'CRITICAL'];
+    var NOM = ['NOMINAL', 'CAUTION', 'EMERGENCY'];
+    var VIT = ['NORMAL', 'ELEVATED', 'EMERGENCY'];
+    var LOWW = ['NORMAL', 'BELOW NOMINAL', 'EMERGENCY'];
 
     function chip(key, s, words) { C[key] = { sev: s, text: (words || NOM)[Math.min(2, s)] }; SV[key] = s; }
 

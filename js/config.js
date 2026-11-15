@@ -269,7 +269,7 @@ window.AMWS = window.AMWS || {};
     ADVISORY:  { sevCls: 1, label: 'SEP WATCH ISSUED' },
     CAUTION:   { sevCls: 1, label: 'ENERGETIC PROTONS DETECTED' },
     WARNING:   { sevCls: 2, label: 'DOSE RATE RISING — LIMIT EVA' },
-    EMERGENCY: { sevCls: 3, label: 'HIGH DOSE RATE — SEEK SHELTER NOW' }
+    EMERGENCY: { sevCls: 3, label: 'DOSE RATE — SEEK SHELTER NOW' }
   };
 
 
@@ -307,7 +307,7 @@ window.AMWS = window.AMWS || {};
      ----------------------------------------------------------------------- */
   A.LOCATIONS = {
     EARTH: {
-      name: 'EARTH', destination: 'LOW EARTH ORBIT', site: 'TRAINING / LEO STATION',
+      name: 'EARTH', destination: 'LEO (BELOW NOMINAL EARTH ORBIT)', site: 'TRAINING / LEO STATION',
       phases: {
         TRANSIT: {
           label: 'LEO — ORBITAL', dist: 420, toGo: null, gravity: 0.0,

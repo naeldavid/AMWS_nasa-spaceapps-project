@@ -46,7 +46,7 @@
     var hd = document.createElement('div');
     hd.className = 'cons-hd';
     var lbl = document.createElement('span');
-    lbl.textContent = String(label).replace(/[^A-Za-z0-9 _\-]/g, '') + (isLimiting ? ' \u2014 LOWEST REMAINING' : '');
+    lbl.textContent = String(label).replace(/[^A-Za-z0-9 _\-]/g, '') + (isLimiting ? ' \u2014 LIMITING' : '');
     var safePct = Math.min(100, Math.max(0, parseInt(item.pct, 10) || 0));
     var val = document.createElement('b');
     val.className = 'sev-' + safeCls(item.cls);
