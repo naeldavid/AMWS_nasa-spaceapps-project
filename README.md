@@ -120,3 +120,9 @@ Includes boot smoke, config/sim/assess/demo checks (see `package.json` / `tests/
 
 - Illustrative SPE progression (not NOAA S-scale operational logic), no turnaround/time-to-threshold/conjunction countdown, no DONKI/LOLA integration, simplified navigation/walkback assumptions, synthetic cardiac waveform for display only. The standalone risk engine was removed. Details in [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 - README/OG screenshots in-repo were captured from a local build of the deployed commit; automated capture directly from the deployed URL was unavailable in the final verification environment.
+
+## Disclaimer
+
+AMWS is a **design concept / prototype**. Not a certified medical device or flight system. Not approved by NASA, ESA, or any space agency. All readings are generated locally by simulation. Emergency procedures shown are **illustrative**, not NASA-certified flight procedures.
+
+**Team:** MLF #2 · **Members:** Yara El Kassir (Team Owner), Talia ElKomy, Naël David, Reem Louhmadi, Ahmad Alshabrawi, Melek Sanliturk
