@@ -183,7 +183,8 @@
 
     /* ---- radiation ---- */
     var dosePct    = S.doseMission / C.CAREER_LIMIT_MSV * 100;
-    var careerSev  = dosePct >= C.RAD_WARNING_PCT ? 2 : dosePct >= C.RAD_CAUTION_PCT ? 1 : 0;
+    var careerSev  = S.doseMission > C.CAREER_DOSE_WARNING_MSV ? 2
+                   : S.doseMission > C.CAREER_DOSE_CAUTION_MSV ? 1 : 0;
     var speSt      = S.speStage || 'NORMAL';
     var speData    = C.SPE_STAGES[speSt] || C.SPE_STAGES.NORMAL;
     var SPE_CLS    = { NORMAL:'nominal', ADVISORY:'advisory', CAUTION:'caution', WARNING:'warning', EMERGENCY:'emergency' };

@@ -178,11 +178,12 @@
 
     /* ---- ENVIRONMENT: SPE alert (stage-based, no dose multiplier) ---- */
     // ASSUMPTION: 4-stage progression is a design choice (SPEC.md Part 4)
+    // SPE EMERGENCY does NOT trigger auto-emergency screen (only pressure/CO2/O2 do)
     var speStage = S.speStage || 'NORMAL';
     if (speStage !== 'NORMAL') {
       var speDef = C.SPE_STAGES[speStage];
-      var speSevMap = { ADVISORY: SEV_CAUTION, CAUTION: SEV_CAUTION, WARNING: SEV_WARNING, EMERGENCY: SEV_EMERGENCY };
-      var speSev = speSevMap[speStage] || SEV_CAUTION;
+      // sevCls is already on the 0-3 scale (fixed in config.js)
+      var speSev = speDef.sevCls;
       add('spe', speSev,
           'SPE: ' + speDef.label,
           speStage === 'EMERGENCY' ? 'Enter storm shelter immediately · abandon EVA' :
@@ -191,13 +192,15 @@
           'ENVIRONMENT', true); // stage thresholds are ASSUMPTION
     }
 
-    // Career dose alert
-    var dosePct = S.doseMission / C.CAREER_LIMIT_MSV * 100;
-    if (dosePct >= C.RAD_WARNING_PCT) {
-      add('careerDose', SEV_WARNING, 'CAREER DOSE WARNING — ' + dosePct.toFixed(0) + '%',
+    // Career dose alert — classified in mSv against sourced career limit
+    // ASSUMPTION: caution/warning thresholds (see config.js CAREER_DOSE_*_MSV)
+    if (S.doseMission > C.CAREER_DOSE_WARNING_MSV) {
+      var dosePct = (S.doseMission / C.CAREER_LIMIT_MSV * 100).toFixed(0);
+      add('careerDose', SEV_WARNING, 'CAREER DOSE WARNING — ' + dosePct + '%',
           'Consult flight surgeon · limit further exposure', 'ENVIRONMENT', true);
-    } else if (dosePct >= C.RAD_CAUTION_PCT) {
-      add('careerDose', SEV_CAUTION, 'CAREER DOSE CAUTION — ' + dosePct.toFixed(0) + '%',
+    } else if (S.doseMission > C.CAREER_DOSE_CAUTION_MSV) {
+      var dosePct2 = (S.doseMission / C.CAREER_LIMIT_MSV * 100).toFixed(0);
+      add('careerDose', SEV_CAUTION, 'CAREER DOSE CAUTION — ' + dosePct2 + '%',
           'Monitor cumulative dose', 'ENVIRONMENT', true);
     }
 

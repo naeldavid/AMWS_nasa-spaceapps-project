@@ -245,9 +245,9 @@ window.AMWS = window.AMWS || {};
   // source: NASA-STD-3001 Vol 1 Rev B; NASA Radiation Protection Technical Brief
   A.CAREER_LIMIT_MSV = 600; // mSv — career effective dose limit
 
-  // ASSUMPTION: career dose caution band (600 mSv limit sourced; band threshold is not)
+  // ASSUMPTION: career dose caution band — 400 mSv is 2/3 of limit; no NASA public threshold
   A.CAREER_DOSE_CAUTION_MSV = 400; // mSv
-  // ASSUMPTION: career dose warning band (continued)
+  // ASSUMPTION: career dose warning band — 500 mSv is 5/6 of limit; no NASA public threshold
   A.CAREER_DOSE_WARNING_MSV = 500; // mSv
 
   // source: MSL/RAD cruise phase 1.84 ± 0.33 mSv/day (see docs/DATA_SOURCES.md)
@@ -263,18 +263,16 @@ window.AMWS = window.AMWS || {};
   A.DOSE_RATE_LUNAR_MSVD = 1.4;
 
   // ASSUMPTION: 4-stage SPE alert progression is a design choice, not a NASA-defined sequence
+  // sevCls maps to app severity: 0=nominal, 1=caution, 2=warning, 3=emergency
   A.SPE_STAGES = {
     NORMAL:    { sevCls: 0, label: 'NORMAL' },
     ADVISORY:  { sevCls: 1, label: 'SEP WATCH ISSUED' },
-    CAUTION:   { sevCls: 2, label: 'ENERGETIC PROTONS DETECTED' },
-    WARNING:   { sevCls: 3, label: 'DOSE RATE RISING — LIMIT EVA' },
-    EMERGENCY: { sevCls: 4, label: 'HIGH DOSE RATE — SEEK SHELTER NOW' }
+    CAUTION:   { sevCls: 1, label: 'ENERGETIC PROTONS DETECTED' },
+    WARNING:   { sevCls: 2, label: 'DOSE RATE RISING — LIMIT EVA' },
+    EMERGENCY: { sevCls: 3, label: 'HIGH DOSE RATE — SEEK SHELTER NOW' }
   };
 
-  // ASSUMPTION: career dose percentage caution band (~400 mSv = 67% of 600 mSv limit)
-  A.RAD_CAUTION_PCT  = 67; // % of career limit
-  // ASSUMPTION: career dose percentage warning band (~500 mSv = 83% of 600 mSv limit)
-  A.RAD_WARNING_PCT  = 83; // % of career limit
+
 
   /* -----------------------------------------------------------------------
      COMMUNICATION DELAYS
@@ -438,10 +436,12 @@ window.AMWS = window.AMWS || {};
       set: { suitBattTarget: 17 } },
     { at: 42, dur: 10, text: 'Slow suit pressure decay. Metabolic workload elevated.',
       set: { suitPBase: 3.8, spo2Base: 88, metabolic: 1900 } },
-    { at: 54, dur: 6,  text: 'CO₂ critical + pressure approaching breach threshold → auto-EMERGENCY.',
-      set: { co2Base: 8.0, spo2Base: 86, suitPBase: 3.4 } }
+    { at: 54, dur: 6,  text: 'CO₂ critical + pressure breach threshold → auto-EMERGENCY.',
+      set: { co2Base: 8.0, spo2Base: 86, suitPBase: 3.3 } }  // 3.3 < 3.5 trigger; deterministic
   ];
   // ASSUMPTION: demo scenario length (illustrative)
   A.DEMO_LENGTH = 62; // seconds
+  A.DEMO_PRESSURE_TARGET = 3.3; // psi
+  // ASSUMPTION: pressure ramp target below 3.5 psi trigger — deterministic crossing
 
 })(window.AMWS);
