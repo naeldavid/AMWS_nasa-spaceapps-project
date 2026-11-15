@@ -1,14 +1,17 @@
 # AMWS — Astronaut Mission Wrist System
 
-**Live demo:** https://amws.vercel.app  
-**Repository:** https://github.com/naeldavid/AMWS_nasa-spaceapps-project
+**One-line pitch:** Astronaut health and EVA decision-support concept for real-time, delay-aware return-margin and crew health awareness.  
+**Challenge:** Create Health Monitoring Software for Astronauts on Space Missions (NASA International Space Apps Challenge 2026)  
+**Live demo:** https://amws.vercel.app
 
-AMWS is a concept prototype of a wrist-mounted mission computer for astronauts during EVA and transit on the Moon, Mars, and beyond. It helps crews answer the questions that matter in real time: **Can I get back safely? What is failing? How long until Earth can respond?** All telemetry is **simulated locally in the browser**. This is **not** a medical device or flight-certified system.
+**Evaluate in 2 minutes:** open the live link, press **RUN 60 s DEMO** (or add `?demo=1`). No login.
 
-Built for the **NASA International Space Apps Challenge** — *Wearable Technology for Astronaut Health and Safety*.
+## Use of AI
+Built with Claude (Anthropic) and Kiro. Humans directed research, made design decisions, and verified sources.
+
+**Disclaimer:** Simulated concept, not a medical device, not affiliated with or endorsed by NASA.
 
 ---
-
 ## The problem
 
 On planetary EVAs, crews operate with limited consumables, communication delays, and no immediate rescue. Existing status displays can overwhelm operators with raw numbers; what astronauts need is **actionable margin** (time/resources left to return), clear severity, and procedures that work when Earth is minutes or tens of minutes away.
@@ -117,9 +120,3 @@ Includes boot smoke, config/sim/assess/demo checks (see `package.json` / `tests/
 
 - Illustrative SPE progression (not NOAA S-scale operational logic), no turnaround/time-to-threshold/conjunction countdown, no DONKI/LOLA integration, simplified navigation/walkback assumptions, synthetic cardiac waveform for display only. The standalone risk engine was removed. Details in [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 - README/OG screenshots in-repo were captured from a local build of the deployed commit; automated capture directly from the deployed URL was unavailable in the final verification environment.
-
-## Disclaimer
-
-AMWS is a **design concept / prototype**. Not a certified medical device or flight system. Not approved by NASA, ESA, or any space agency. All readings are generated locally by simulation. Emergency procedures shown are **illustrative**, not NASA-certified flight procedures.
-
-**Team:** MLF #2 · **Members:** Yara El Kassir (Team Owner), Talia ElKomy, Naël David, Reem Louhmadi, Ahmad Alshabrawi, Melek Sanliturk

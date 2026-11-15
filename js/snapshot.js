@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    AMWS — snapshot.js
    Purpose: builds AMWS.snapshot() — the single plain-object the UI reads.

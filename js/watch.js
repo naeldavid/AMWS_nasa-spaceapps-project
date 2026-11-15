@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    watch.js — Wrist computer interface: screen router, templates, glove-
    friendly interactions (large targets, hold-to-confirm for dangerous

@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    AMWS — Astronaut Mission Wrist System (concept prototype)
    config.js — static data: sourced constants, thresholds, mission scenarios.

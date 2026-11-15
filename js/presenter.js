@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    presenter.js — Presenter Tool drawer: demo engine + scenario controls.
    PRESENTER-ONLY: this panel would not exist on a flight unit.

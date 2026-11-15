@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    dashboard.js — Ground / Flight Controller view.
    Reads ONLY A.snapshot(). No thresholds, no magic numbers.

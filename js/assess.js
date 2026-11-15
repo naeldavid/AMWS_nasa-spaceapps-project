@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    AMWS — assess.js — Alert classification and emergency controller.
 

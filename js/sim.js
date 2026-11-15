@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    AMWS — sim.js — Simulation engine.
    Produces SIMULATED astronaut + suit telemetry. NOT real data.

@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    ui.js — Pure renderer of the snapshot object.
    Reads ONLY A.snapshot() — never accesses A.state directly.

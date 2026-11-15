@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    main.js — Boot, main loop, view switching (DESKTOP / WRIST).
    Loop rates: physics 10 Hz · assess + UI 4 Hz · history 1 Hz · canvas 60 fps.

@@ -1,3 +1,4 @@
+// Developed with AI coding assistance; see README, Use of AI
 /* =========================================================================
    charts.js — Canvas visualizations: cardiac trace sweep, sparklines, signal-delay strip.
    ========================================================================= */
