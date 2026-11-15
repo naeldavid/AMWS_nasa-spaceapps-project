@@ -268,6 +268,7 @@
   function navSVG(svg) {
     var scale = 61 / 1000; // 1 km per middle ring... ring spacing ≈ 0.5 km
     var h = S.nav.heading * Math.PI / 180;
+    if (!S.nav.rover) S.nav.rover = { x: 0, y: 0 };
     function rel(x, y) { // heading-up rotation
       var dx = x - S.nav.x, dy = y - S.nav.y;
       var rx = dx * Math.cos(h) - dy * Math.sin(h), ry = dx * Math.sin(h) + dy * Math.cos(h);
@@ -275,9 +276,12 @@
       if (r > 88) { px *= 88 / r; py *= 88 / r; }
       return px.toFixed(1) + ' ' + py.toFixed(1);
     }
-    svg.querySelector('.hab').setAttribute('transform', 'translate(' + rel(0, 0) + ')');
-    svg.querySelector('.rover').setAttribute('transform', 'translate(' + rel(S.nav.rover.x, S.nav.rover.y) + ')');
-    svg.querySelector('.rose').setAttribute('transform', 'rotate(' + (-S.nav.heading) + ')');
+    var hab = svg.querySelector('.hab');
+    var rov = svg.querySelector('.rover');
+    var rose = svg.querySelector('.rose');
+    if (hab) hab.setAttribute('transform', 'translate(' + rel(0, 0) + ')');
+    if (rov) rov.setAttribute('transform', 'translate(' + rel(S.nav.rover.x, S.nav.rover.y) + ')');
+    if (rose) rose.setAttribute('transform', 'rotate(' + (-S.nav.heading) + ')');
   }
 
   /* ---------- actions ---------- */
