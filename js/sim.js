@@ -338,6 +338,15 @@
       S.doseToday  += perSec * sdt;
       S.doseMission += perSec * sdt;
 
+      /* 6. EVA elapsed time (tracks time on surface) */
+      if (S.phase === 'SURFACE') {
+        if (!S.evaStartMet) S.evaStartMet = S.met;
+        S.evaElapsedS = S.met - S.evaStartMet;
+      } else {
+        S.evaStartMet  = null;
+        S.evaElapsedS  = 0;
+      }
+
       /* 6. Surface navigation: astronaut wanders in a random heading walk */
       if (S.phase === 'SURFACE') {
         S.nav.heading = (S.nav.heading + rnd(0.6) * dt * 4 + 360) % 360;
@@ -349,8 +358,7 @@
     },
 
     /* Push samples to history ring buffers (called at 1 Hz). */
-    sample: function () {
-      var H = S.hist, max = 120;
+    sample: function () {      var H = S.hist, max = 120;
       var entries = [
         ['hr',     S.v.hr],     ['spo2',    S.v.spo2],
         ['temp',   S.v.temp],   ['resp',    S.v.resp],
