@@ -1,0 +1,13 @@
+{
+  "name": "amws",
+  "version": "0.0.1",
+  "description": "Astronaut Mission Wrist System — concept prototype",
+  "private": true,
+  "scripts": {
+    "check-config": "node tools/check-config.js",
+    "sim-check":    "node tests/sim-check.js",
+    "assess-check": "node tests/assess-check.js",
+    "demo-check":   "node tests/demo-check.js",
+    "test":         "node tools/check-config.js && node tests/sim-check.js && node tests/assess-check.js && node tests/demo-check.js"
+  }
+}

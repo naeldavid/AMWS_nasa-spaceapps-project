@@ -176,13 +176,19 @@
           'Use habitat / crew link · follow local procedures', 'COMMS', true);
     }
 
-    /* ---- ENVIRONMENT: radiation ---- */
-    if (S.radLevel !== 'NORMAL') {
-      var radSev = S.radLevel === 'SPE' ? SEV_EMERGENCY : SEV_CAUTION;
-      add('rad', radSev,
-          S.radLevel === 'SPE' ? 'SOLAR PARTICLE EVENT — SEEK SHELTER' : 'RADIATION ELEVATED',
-          S.radLevel === 'SPE' ? 'Enter storm shelter immediately · minimise exposure' : 'Minimise EVA time · monitor dose',
-          'ENVIRONMENT', true); // multipliers are ASSUMPTION
+    /* ---- ENVIRONMENT: SPE alert (stage-based, no dose multiplier) ---- */
+    // ASSUMPTION: 4-stage progression is a design choice (SPEC.md Part 4)
+    var speStage = S.speStage || 'NORMAL';
+    if (speStage !== 'NORMAL') {
+      var speDef = C.SPE_STAGES[speStage];
+      var speSevMap = { ADVISORY: SEV_CAUTION, CAUTION: SEV_CAUTION, WARNING: SEV_WARNING, EMERGENCY: SEV_EMERGENCY };
+      var speSev = speSevMap[speStage] || SEV_CAUTION;
+      add('spe', speSev,
+          'SPE: ' + speDef.label,
+          speStage === 'EMERGENCY' ? 'Enter storm shelter immediately · abandon EVA' :
+          speStage === 'WARNING'   ? 'Minimise EVA time · prepare for shelter' :
+                                     'Monitor solar weather · be ready to shelter',
+          'ENVIRONMENT', true); // stage thresholds are ASSUMPTION
     }
 
     // Career dose alert
@@ -231,7 +237,22 @@
       }
     }
 
-    // Sort: highest severity first; within same severity, group priority
+    /* ---- MISSION: EVA elapsed vs planned ---- */
+    // ASSUMPTION: EVA_PLANNED_S default and alert bands (see config.js)
+    var evaPlanned = S.evaPlannedS || C.EVA_PLANNED_S;
+    var evaElapsed = S.evaElapsedS || 0;
+    if (S.phase === 'SURFACE' && evaElapsed > 0) {
+      var evaFrac = evaElapsed / evaPlanned;
+      if (evaFrac >= C.EVA_ELAPSED_WARNING) {
+        add('evaElapsed', SEV_WARNING, 'EVA DURATION EXCEEDED PLAN',
+            'Initiate return · coordinate with hab crew', 'MISSION', true);
+      } else if (evaFrac >= C.EVA_ELAPSED_CAUTION) {
+        add('evaElapsed', SEV_CAUTION, 'EVA APPROACHING PLANNED LIMIT',
+            'Monitor consumables · plan return', 'MISSION', true);
+      }
+    }
+
+
     var GROUP_ORDER = { 'LIFE SUPPORT': 0, 'HEALTH': 1, 'MISSION': 2, 'ENVIRONMENT': 3, 'COMMS': 4, 'SYSTEM': 5 };
     out.sort(function (a, b) {
       if (b.sev !== a.sev) return b.sev - a.sev;

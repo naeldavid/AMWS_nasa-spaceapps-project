@@ -126,7 +126,7 @@
      ----------------------------------------------------------------------- */
   function defaults() {
     return {
-      location: 'MARS', phase: 'SURFACE', radLevel: 'NORMAL', commMode: 'NOMINAL',
+      location: 'MARS', phase: 'SURFACE', speStage: 'NORMAL', commMode: 'NOMINAL',
       timeScale: 1, autoEmergency: true, audio: false,
 
       /* Metabolic rate — the PRIMARY state variable (BTU/hr)
@@ -239,9 +239,11 @@
       return (Math.atan2(-S.nav.x, -S.nav.y) * 180 / Math.PI + 360) % 360;
     },
 
-    /* Current dose rate in mSv/day (location-based GCR × SPE multiplier) */
+    /* Current GCR dose rate in mSv/day — baseline only, no SPE multiplier.
+       SPE is a separate alert state; see A.SPE_STAGES in config.js.
+       source: location-specific dose rates in config.js LOCATIONS table */
     doseRate: function () {
-      return this.scenario().dose * C.RAD_LEVELS[S.radLevel].mult;
+      return this.scenario().dose; // mSv/day, GCR baseline
     },
 
     /* One-way communication delay (seconds): light-time + relay overhead */
