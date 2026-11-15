@@ -100,6 +100,7 @@ Includes boot smoke, config/sim/assess/demo checks (see `package.json` / `tests/
 ## Known limitations
 
 - Illustrative SPE progression (not NOAA S-scale operational logic), no turnaround/time-to-threshold/conjunction countdown, no DONKI/LOLA integration, simplified navigation/walkback assumptions, synthetic cardiac waveform for display only. The standalone risk engine was removed. Details in [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
+- README/OG screenshots in-repo were captured from a local build of the deployed commit; automated capture directly from the deployed URL was unavailable in the final verification environment.
 
 ## Disclaimer
 
